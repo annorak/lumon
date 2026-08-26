@@ -1,0 +1,47 @@
+# Private planning material — design doc, task files, agent preamble.
+# Never push these.
+.private/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Environments
+.venv/
+venv/
+.env
+
+# uv (uv.lock is deliberately NOT ignored — a committed lock file
+# is what makes a checkout reproducible for someone verifying our results)
+.uv/
+
+# Testing and coverage
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Type checking and linting
+.mypy_cache/
+.ruff_cache/
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json
