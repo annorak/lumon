@@ -1,0 +1,90 @@
+[project]
+name = "lumon"
+version = "0.1.0"
+description = "Attack-path intervention optimizer with bypass hypothesis generation"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2",
+    "networkx",
+    "numpy",
+    "ortools",
+    "jinja2",
+    "typer",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "ruff",
+    "mypy",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lumon"]
+
+# ---------------------------------------------------------------------------
+# ruff — lint and format
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# mypy — strict, over source and tests alike
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src", "tests"]
+strict = true
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_unreachable = true
+# NOTE: `networkx` and `ortools` ship no py.typed marker. The first task that
+# imports them will need a narrow per-module override here. Add it scoped to
+# those two modules only — never a global `ignore_missing_imports`, which would
+# silently loosen type checking for every dependency.
+
+# ---------------------------------------------------------------------------
+# pytest and coverage
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# TODO(task-02): raise --cov-fail-under from 0 to 90. It is 0 only because task 01
+# ships an empty scaffold with almost no code to cover; leaving it at 90 here would
+# fail the build for no useful reason. Task 02 adds the domain model and raises it.
+addopts = [
+    "--cov",
+    "--cov-report=term-missing",
+    "--cov-fail-under=0",
+    "--strict-markers",
+    "--strict-config",
+]
+
+[tool.coverage.run]
+source = ["src/lumon"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]

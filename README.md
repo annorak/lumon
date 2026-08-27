@@ -183,10 +183,13 @@ These are structural. They are stated in the output, not just here.
 
 ## Status
 
-**Pre-scaffold.** This repository currently contains documentation only — no package, no
-`pyproject.toml`, no `Makefile`. The build proceeds as 19 sequenced tasks; task 01 lays down the
-tooling described below. Until then, the commands in the next section describe the intended
-interface rather than something you can run today.
+**Scaffold only — no product logic yet.** The repository lints, type checks in strict mode, tests,
+and reports coverage, and every package directory below exists as an empty importable package. No
+graph, path, intervention, or solver code is written. The build proceeds as 19 sequenced tasks;
+task 01 laid down the tooling described here and task 02 starts the domain model.
+
+The coverage gate is deliberately set to `--cov-fail-under=0` right now, because there is almost
+no code to cover. Task 02 raises it to 90.
 
 ---
 
@@ -216,11 +219,11 @@ Individually:
 | `make test` | `pytest` with coverage reported to the terminal |
 | `make clean` | remove build, cache, and coverage artifacts |
 
-The verification harness is the part that makes the rest credible: property-based tests generate
-random attack graphs and intervention catalogs, run the solver, then assert that the returned
-set actually disconnects every entry from every objective, and that on instances small enough to
-brute-force no cheaper valid set exists. If those tests fail, nothing downstream should be
-trusted.
+The verification harness will be the part that makes the rest credible, and it is not built yet.
+Once it lands, property-based tests generate random attack graphs and intervention catalogs, run
+the solver, then assert that the returned set actually disconnects every entry from every
+objective, and that on instances small enough to brute-force no cheaper valid set exists. If
+those tests ever fail, nothing downstream should be trusted.
 
 ---
 
@@ -324,10 +327,12 @@ Anything that requires trusting a simulation we authored does not ship.
 
 ---
 
+## Design
+
+The full design document and task breakdown are kept outside version control and are not
+distributed with this repository.
+
 ## Contributing
 
 Read `CHANGELOG.md` for what has landed and in what order. Every change ends with a plain-English
 changelog entry written for a junior engineer who has not read the design doc.
-
-Design and planning material lives outside version control by intent and is not distributed with
-this repository.
