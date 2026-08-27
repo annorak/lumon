@@ -56,10 +56,14 @@ disallow_untyped_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 warn_unreachable = true
-# NOTE: `networkx` and `ortools` ship no py.typed marker. The first task that
-# imports them will need a narrow per-module override here. Add it scoped to
-# those two modules only — never a global `ignore_missing_imports`, which would
-# silently loosen type checking for every dependency.
+
+# `networkx` ships no py.typed marker, and `lumon.io.nx_adapter` imports it. The
+# override is scoped to that one module deliberately — never a global
+# `ignore_missing_imports`, which would silently loosen type checking for every
+# dependency. `ortools` needs the same treatment when the solver task imports it.
+[[tool.mypy.overrides]]
+module = ["networkx.*"]
+ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
 # pytest and coverage

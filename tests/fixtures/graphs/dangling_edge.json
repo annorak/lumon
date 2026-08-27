@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    { "id": "n_entry", "type": "entry_point", "label": "internet-facing ingress" },
+    { "id": "n_service", "type": "service", "label": "checkout-api" },
+    { "id": "n_cloud", "type": "objective", "label": "production cloud account", "weight": 10.0 }
+  ],
+  "edges": [
+    {
+      "id": "e_reach",
+      "source": "n_entry",
+      "target": "n_service",
+      "type": "reaches",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_access",
+      "source": "n_service",
+      "target": "n_clod",
+      "type": "can_access",
+      "evidence": "validated"
+    }
+  ],
+  "metadata": {
+    "graph_id": "dangling-edge-001",
+    "note": "e_access targets 'n_clod', a typo for 'n_cloud'. The path to the objective vanishes and nothing crashes."
+  }
+}

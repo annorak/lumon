@@ -247,3 +247,104 @@ usable.
   converts it to NetworkX. That is all task 03.
 - `Path`, `PathSet`, and the intervention types are not here. Tasks 05 and 06 add them to this
   same `model/` package.
+
+---
+
+## Task 03 — Graph I/O and invariants
+_2026-08-27_
+
+**What changed in plain English**
+
+Task 02 gave us types you could build in Python. This task lets a graph come from a file, and
+answers the question you have to answer before any analysis touches it: *is this graph
+actually usable?*
+
+Three things landed. `load_graph` and `save_graph` read and write an attack graph as indented
+JSON. `export_json_schema` writes out the JSON Schema for `AttackGraph`, so somebody building
+a tool outside this repo can generate input Lumon will accept without reading our Pydantic
+models. And `to_networkx` converts a graph into the NetworkX structure the path enumerator and
+everything after it will run on.
+
+The part worth reading is the invariant checker, and specifically the fact that it **returns a
+report rather than throwing**. That looks like the wrong choice until you look at what failure
+actually looks like here. Say an edge's target is `n_clod` and the author meant `n_cloud`.
+Nothing crashes. The file is valid JSON, it is valid against the schema, every field is the
+right type, and it loads fine. What happens is that the path from the internet-facing service
+to the cloud account quietly stops existing, the solver severs the paths it was handed, and the
+final report tells a customer they have fewer attack paths than they really do. Under-reporting
+risk is the single worst thing this system can do — worse than crashing, because a crash gets
+noticed. So `check_invariants` collects *every* problem in one pass and hands the whole list
+back, and the caller decides what to do with it and can show that list to whoever supplied the
+graph. `assert_usable` is there for callers that do want to stop dead; it raises with all the
+errors formatted.
+
+There are ten checks. Six are errors, meaning analysis over this graph would be wrong: the
+three flavours of dangling reference (source, target, `enabled_by`), and the three ways a graph
+can have nothing to analyse (no entry points, no objectives, no validated edges). Four are
+warnings, meaning it will analyse fine but probably is not what the author meant: a node no
+edge mentions, an objective nothing validated reaches, an entry point nothing validated leaves,
+and an `enabled_by` pointing at something that is not a vulnerability or a credential. Warnings
+never block. `is_usable` is true as long as there are no errors.
+
+`to_networkx` builds a `MultiDiGraph`, not a `DiGraph`, and that is deliberate. One pair of
+nodes can be joined by more than one transition — a service account can both `reaches` and
+`can_access` a cloud account — and those are two different edges with two different fixes
+available against them. A `DiGraph` would keep one and silently drop the other, and the solver
+would end up choosing from a catalog that is missing an option. `valid_small.json` has exactly
+that shape, and there is a test asserting both edges survive.
+
+**New things you can now do**
+
+- Load an attack graph from a JSON file, and save one back out, with the round trip proven equal
+- Export the JSON Schema so an external tool can produce input we will accept
+- Ask a graph what is wrong with it and get a structured list back, with a severity and the id of
+  the offending node or edge on each item
+- Assert a graph is usable and get a single exception listing every error, if you want the strict
+  behaviour
+- Convert a graph to NetworkX, optionally filtered to validated edges only
+
+**Files added or changed**
+
+- `src/lumon/io/loader.py` — `load_graph`, `save_graph`, `export_json_schema`, `GraphLoadError`
+- `src/lumon/io/invariants.py` — the ten checks, `Severity`, `Violation`, `InvariantReport`,
+  `check_invariants`, `assert_usable`, `GraphInvariantError`
+- `src/lumon/io/nx_adapter.py` — `to_networkx`
+- `src/lumon/io/__init__.py` — re-exports the eleven public names; import from here
+- `tests/conftest.py` — the `graphs_dir` fixture pointing at the hand-written graphs
+- `tests/fixtures/graphs/valid_small.json` — eight nodes, two validated paths, zero violations
+- `tests/fixtures/graphs/dangling_edge.json` — the `n_clod` typo, as a file you can look at
+- `tests/fixtures/graphs/no_objective.json` — well-formed, but nothing worth reaching
+- `tests/unit/test_io_loader.py`, `tests/unit/test_invariants.py`, `tests/unit/test_nx_adapter.py`
+  — 26 tests, one per violation code
+- `pyproject.toml` — the mypy override for `networkx`, which ships no type information
+
+**Gotchas worth knowing**
+
+- **`to_networkx` does not check invariants, on purpose.** Hand it a graph with a dangling edge
+  and NetworkX will invent the missing endpoint as a node with no attributes, so
+  `G.nodes["n_clod"]` is `{}` and a later stage reading `data["node"]` will raise `KeyError`.
+  Call `assert_usable` where the graph enters the pipeline. It is not done inside the converter
+  so that you can still convert a graph you already know is broken in order to look at it.
+- **`enabled_by` counts for `ORPHAN_NODE`.** A node is an orphan only if no edge names it as
+  source, target, *or* `enabled_by`. Vulnerability nodes are never edge endpoints — they are
+  only ever referenced as an enabler — so the stricter reading would flag every vulnerability in
+  every graph and the warning would be pure noise.
+- **A graph that loads is not a graph that is usable.** `load_graph` only proves the file matches
+  the schema. `AttackGraph` still deliberately permits edges pointing at nodes it does not
+  contain, because ingest assembles graphs as evidence arrives. The two checks are separate on
+  purpose; run both.
+- **`save_graph` output is semantically equal to a hand-written fixture, not byte-identical.**
+  Pydantic writes every field, so you get `"weight": null` and `"attributes": {}` on nodes that
+  omitted them. Round-trip tests compare parsed graphs, never file text.
+- **Violation codes are plain strings**, not an enum. If you match on one, a typo is a silently
+  empty result. There is a test per code, so a typo in the checker itself is caught.
+- **The mypy override names only `networkx.*`.** When the solver task imports `ortools`, add a
+  second scoped override next to it. Do not reach for a global `ignore_missing_imports`.
+
+**Not done yet**
+
+- Nothing enumerates paths through the graph. `to_networkx` exists so task 05 can, but no code
+  walks entry to objective yet.
+- Nothing calls `assert_usable` anywhere, because there is no pipeline and no CLI yet. Task 18
+  wires it in at the boundary where a graph is loaded.
+- No generator, so every graph in the repo is hand-written. Task 04 adds the synthetic generator.

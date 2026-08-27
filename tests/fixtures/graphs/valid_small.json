@@ -1,0 +1,84 @@
+{
+  "nodes": [
+    { "id": "n_entry", "type": "entry_point", "label": "internet-facing ingress" },
+    { "id": "n_service", "type": "service", "label": "checkout-api" },
+    { "id": "n_vuln", "type": "vulnerability", "label": "unauthenticated RCE in checkout-api" },
+    { "id": "n_identity", "type": "identity", "label": "checkout-api service account" },
+    { "id": "n_cred", "type": "credential", "label": "cloud key in mounted secret" },
+    { "id": "n_worker", "type": "asset", "label": "kubernetes worker node" },
+    { "id": "n_boundary", "type": "boundary", "label": "cluster egress boundary" },
+    { "id": "n_cloud", "type": "objective", "label": "production cloud account", "weight": 10.0 }
+  ],
+  "edges": [
+    {
+      "id": "e_reach",
+      "source": "n_entry",
+      "target": "n_service",
+      "type": "reaches",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_exploit",
+      "source": "n_service",
+      "target": "n_identity",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_vuln"
+    },
+    {
+      "id": "e_read",
+      "source": "n_identity",
+      "target": "n_cred",
+      "type": "reads",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_auth",
+      "source": "n_cred",
+      "target": "n_cloud",
+      "type": "authenticates_as",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_escape",
+      "source": "n_service",
+      "target": "n_worker",
+      "type": "escapes",
+      "evidence": "validated",
+      "enabled_by": "n_vuln"
+    },
+    {
+      "id": "e_worker_boundary",
+      "source": "n_worker",
+      "target": "n_boundary",
+      "type": "reaches",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_boundary_cloud",
+      "source": "n_boundary",
+      "target": "n_cloud",
+      "type": "can_access",
+      "evidence": "validated",
+      "enabled_by": "n_cred"
+    },
+    {
+      "id": "e_identity_reaches",
+      "source": "n_identity",
+      "target": "n_cloud",
+      "type": "reaches",
+      "evidence": "observed"
+    },
+    {
+      "id": "e_identity_access",
+      "source": "n_identity",
+      "target": "n_cloud",
+      "type": "can_access",
+      "evidence": "inferred"
+    }
+  ],
+  "metadata": {
+    "graph_id": "valid-small-001",
+    "note": "Two validated paths from n_entry to n_cloud. Clean: no invariant violations."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    { "id": "n_entry", "type": "entry_point", "label": "internet-facing ingress" },
+    { "id": "n_service", "type": "service", "label": "checkout-api" }
+  ],
+  "edges": [
+    {
+      "id": "e_reach",
+      "source": "n_entry",
+      "target": "n_service",
+      "type": "reaches",
+      "evidence": "validated"
+    }
+  ],
+  "metadata": {
+    "graph_id": "no-objective-001",
+    "note": "Well-formed but has nothing worth reaching, so there is no attack path to sever."
+  }
+}
