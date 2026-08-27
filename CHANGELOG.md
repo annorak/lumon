@@ -154,3 +154,96 @@ to 90 and it should not come back down after that.**
 - CI has never actually run — the workflow file is valid YAML and the same `make check` passes
   locally on macOS, but the first push is the first time it executes on Linux.
 - `docs/` and `fixtures/armadin/` are empty placeholders. Task 14 fills the fixtures.
+
+---
+
+## Task 02 — Core domain model
+_2026-08-26_
+
+**What changed in plain English**
+
+The repo now has a vocabulary. Everything after this task manipulates the three types added
+here: a `Node` (a thing an attacker interacts with — an asset, a service, an identity, a
+credential, a boundary, a vulnerability, an entry point, or an objective), an `Edge` (one
+transition the attacker makes from one node to another), and an `AttackGraph` (a bag of nodes
+and edges plus a little metadata). They are Pydantic models, so they validate themselves and
+they load and save as JSON without anyone writing a parser.
+
+The part worth actually reading is the **evidence tag**. Every edge carries one of three
+values, and which one it carries decides what that edge is allowed to influence.
+
+`VALIDATED` means the attacker performed this transition and it was reproduced. This is the
+only value the solver is ever allowed to look at. Path enumeration, the coverage matrix, the
+cost frontier, the "you severed 81% of weighted paths" number — all of it is computed over
+validated edges and nothing else. `OBSERVED` means someone saw it during reconnaissance but
+never actually did it: a port answered, a role exists, a secret is mounted. `INFERRED` means
+a rule asserted it — "this role has that permission, so this should work" — and nobody looked.
+
+Why three levels instead of a boolean? Because the two weaker ones are not garbage, they are
+just a different kind of claim. They are the raw material for bypass hypotheses later on: the
+routes an attacker would probably try next after you apply a fix, which is a queue of things
+to go test. What they must never do is quietly become part of an answer. If an `OBSERVED` edge
+could sneak into the solver, Lumon would be telling a customer "this path is now severed"
+based on something nobody ever proved was there in the first place, and the entire pitch —
+that everything we claim can be checked by someone who does not trust us — collapses. So the
+tag is not documentation. It is a filter that every stage downstream is required to apply, and
+`validated_edges()` on the graph is the accessor that does it. There is a long docstring on
+`Evidence` in `src/lumon/model/enums.py` stating exactly what each level may and may not touch;
+read that one before writing anything that consumes edges.
+
+Two smaller decisions. First, the models are **frozen**: once you build a node you cannot
+reassign its fields. That kills a whole family of bugs where some analysis stage quietly edits
+the graph it was handed and the stage after it computes something different. Second, unknown
+fields are **rejected** rather than ignored, so a typo like `"evidance": "validated"` in an
+input file fails loudly instead of silently defaulting.
+
+One thing this task deliberately does *not* do: it does not check that an edge's `source` and
+`target` actually exist in the node list. A graph full of dangling edges constructs happily.
+That is on purpose — ingest assembles a graph as evidence arrives and needs to hold partial
+state — and there is a test asserting it stays that way. Task 03 is where a graph gets judged
+usable.
+
+**New things you can now do**
+
+- Build a typed attack graph in Python, or load one from JSON, with validation for free
+- Serialize a graph to JSON and read it back and get an equal object
+- Ask a graph for its entry points, its objectives, its nodes or edges of a given type, or a
+  node or edge by id
+- Ask a graph for only its validated edges, which is the filter every later stage depends on
+
+**Files added or changed**
+
+- `src/lumon/model/enums.py` — `NodeType`, `EdgeType`, `Evidence`, with the evidence rules
+  written out in the docstring
+- `src/lumon/model/graph.py` — `Node`, `Edge`, `AttackGraph`, their validation, and the lookups
+- `src/lumon/model/__init__.py` — re-exports the six public names; import from here, not from
+  the submodules
+- `tests/unit/test_model_graph.py` — 18 tests over a six-node kill chain shaped like the one in
+  the design doc
+- `pyproject.toml` — coverage gate raised from 0 to 90 now that there is real code to cover
+
+**Gotchas worth knowing**
+
+- **Frozen is not deep.** `node.label = "x"` raises, but `node.attributes["x"] = "y"` succeeds,
+  and so does `graph.nodes.append(...)`. Pydantic only guards attribute assignment. Treat the
+  dicts and lists as read-only by convention; nothing enforces it.
+- **Only objectives carry a weight.** An objective without one is a validation error, and so is
+  a weight on anything that is not an objective. The weight is how much the business loses if
+  that objective falls, which is what makes "percent of weighted paths severed" mean anything.
+  A weight on, say, a service would silently mean nothing, so it is rejected outright.
+- **Ids must have no whitespace and must not be empty.** Ids are the join key between graphs,
+  paths, coverage matrices, and the final report. `"n 1"` versus `"n1"` would be a very quiet
+  bug. Note that this rule lives in Python and does *not* show up in the exported JSON Schema,
+  so an external tool generating input files will not be warned by the schema alone.
+- **The enums serialize as lowercase strings** (`"entry_point"`, `"validated"`), not integers,
+  so hand-written fixture files stay readable and a diff of two graphs is meaningful.
+- **`node_by_id` and `edge_by_id` scan the list.** Fine at the real sizes (tens of paths, around
+  a hundred interventions). If some later stage does these lookups inside a hot loop, build a
+  dict there rather than caching one on the model.
+
+**Not done yet**
+
+- Nothing loads a graph from a file yet, nothing checks that a graph makes sense, and nothing
+  converts it to NetworkX. That is all task 03.
+- `Path`, `PathSet`, and the intervention types are not here. Tasks 05 and 06 add them to this
+  same `model/` package.

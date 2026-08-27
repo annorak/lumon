@@ -67,13 +67,10 @@ warn_unreachable = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# TODO(task-02): raise --cov-fail-under from 0 to 90. It is 0 only because task 01
-# ships an empty scaffold with almost no code to cover; leaving it at 90 here would
-# fail the build for no useful reason. Task 02 adds the domain model and raises it.
 addopts = [
     "--cov",
     "--cov-report=term-missing",
-    "--cov-fail-under=0",
+    "--cov-fail-under=90",
     "--strict-markers",
     "--strict-config",
 ]
