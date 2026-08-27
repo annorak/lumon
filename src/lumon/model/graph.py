@@ -25,7 +25,9 @@ EntityId = Annotated[str, AfterValidator(_check_id)]
 reports, so whitespace in one turns every downstream join into a guessing game."""
 
 
-def _reject_duplicate_ids(ids: list[str], kind: str) -> None:
+def reject_duplicate_ids(ids: list[str], kind: str) -> None:
+    """Raise if any id appears twice. Shared with `lumon.model.path`, which owes a `PathSet`
+    the same guarantee a graph owes its nodes and edges: an id names exactly one thing."""
     duplicates = sorted(id_ for id_, count in Counter(ids).items() if count > 1)
     if duplicates:
         raise ValueError(f"duplicate {kind} ids: {', '.join(duplicates)}")
@@ -93,8 +95,8 @@ class AttackGraph(BaseModel):
 
     @model_validator(mode="after")
     def _check_ids_unique(self) -> Self:
-        _reject_duplicate_ids([node.id for node in self.nodes], "node")
-        _reject_duplicate_ids([edge.id for edge in self.edges], "edge")
+        reject_duplicate_ids([node.id for node in self.nodes], "node")
+        reject_duplicate_ids([edge.id for edge in self.edges], "edge")
         return self
 
     def node_by_id(self, node_id: str) -> Node:

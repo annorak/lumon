@@ -446,3 +446,113 @@ truth and nothing else.
   tested against hand-built graphs instead.
 - No graphs are checked into the repo from this. Everything is generated on demand in tests, since
   a seed and a parameter set reproduce a graph exactly.
+
+## Task 05 — Path extraction
+_2026-08-27_
+
+**What changed in plain English**
+
+Up to now we had graphs and nothing that read them. This task adds the step that turns a graph
+into the thing the rest of the system actually works on: the list of attack paths. A path is one
+route from an entry point to an objective — "the internet-facing service, then the service
+account, then the credential sitting on disk, then the cloud account." Everything after this
+point counts paths, weights paths, or tries to break paths, so this is where that list gets made.
+
+The rule that matters most here is that **only validated edges are allowed to produce a path**.
+Every edge in a graph carries a tag saying how well it is backed by evidence: `validated` means
+somebody actually performed that transition and it was reproduced, `observed` means it was seen
+during recon but never exercised, and `inferred` means a rule asserted it. Extraction throws
+away the second two entirely before it starts walking. That is not a tidiness thing. Lumon's one
+promise is that a person who does not trust us can check every claim it makes, and the moment an
+unproven edge can put a path into the answer, the whole output becomes "here is a fix for a route
+we think might be there." The observed and inferred edges are not deleted, they are just held
+back — task 13 picks them up as raw material for bypass hypotheses, which are explicitly a queue
+of things to go and test rather than findings.
+
+The second thing worth understanding is why the caps are loud. Enumeration is capped at 5,000
+paths by default, because a badly shaped graph can produce astronomically many. If we hit that
+cap and quietly handed back the first 5,000 of 8,000 paths, the report would go on to say "these
+three fixes sever everything" while 3,000 paths nobody looked at sat there untouched. So when the
+cap bites, the returned `PathSet` sets `truncated=True` and carries a `truncation_reason` naming
+the cap and the entry-objective pair it was working on at the time. A caller can always tell, and
+`PathSet` refuses to be built with `truncated=True` and no reason.
+
+There is one subtlety in what counts as a distinct path. Two nodes can be joined by more than one
+validated edge — an identity that both `reaches` and `can_access` a cloud account is two separate
+attacker techniques that happen to start and end in the same place. Those are two paths, not one,
+because an intervention might remove one and leave the other standing. So the search runs over
+edge sequences rather than node sequences, and two paths in the output can have identical node
+lists and different edge lists.
+
+`summarize()` is a small extra: it gives you a one-line read on a path set — how many paths, how
+many entries and objectives they touch, how long they are, and which single edge shows up on the
+most paths. That last number is a preview of the chokepoint structure the solver will find
+properly later. It is a sanity check for a human, not an input to anything, and nothing is ranked
+or chosen from it.
+
+**New things you can now do**
+
+- Turn an attack graph into the complete set of validated entry-to-objective paths
+- Tell, from the result alone, whether the enumeration finished or gave up partway
+- Group paths by the objective they reach, total their weight, or get their weights keyed by id
+- Get a quick sanity summary of a path set, including the busiest edge in it
+
+**Files added or changed**
+
+- `src/lumon/model/path.py` — `Path` and `PathSet`, the models everything downstream counts
+- `src/lumon/paths/extract.py` — `extract_paths(graph, max_paths, max_depth)`, the enumeration
+- `src/lumon/paths/stats.py` — `PathStats` and `summarize(path_set)`, the sanity read
+- `src/lumon/paths/__init__.py` — re-exports the public names; import from here
+- `src/lumon/model/__init__.py` — now also exports `Path` and `PathSet`
+- `src/lumon/model/graph.py` — `_reject_duplicate_ids` renamed to `reject_duplicate_ids` so
+  `PathSet` can reuse it instead of copying the same four lines
+- `tests/unit/test_model_path.py` — the models on their own
+- `tests/unit/test_path_extraction.py` — extraction, including the run against every generator
+  preset's ground truth
+- `tests/unit/test_path_stats.py` — the summary
+
+**Gotchas worth knowing**
+
+- **`Path` shadows `pathlib.Path`.** If a module needs both, alias one of them. Nothing in the
+  codebase currently does, which is why this has not bitten anyone yet.
+- **`PathSet.truncated` has no default and is deliberately required.** You cannot construct a
+  path set without stating whether it is complete. That is 16 extra characters in every test and
+  it is worth it: the one failure this type must never allow is a partial result that looks whole.
+- **`max_depth` does not set `truncated`, and that is on purpose.** `max_depth` is a hop count
+  (12 by default, meaning at most 12 edges and 13 nodes), and a route longer than it is silently
+  absent from the output. That sounds like exactly the thing the previous bullet is against, but
+  the difference is that we genuinely cannot tell cheaply whether a longer route exists — proving
+  it does not is a longest-path problem. Flagging every graph "we might have missed something"
+  would make the flag meaningless. `truncated` means one specific, checkable thing: enumeration
+  stopped early because it ran out of budget. If you shrink `max_depth`, know that you are
+  choosing to not look, and say so wherever the result is used.
+- **NetworkX's `all_simple_paths` is the wrong function for this graph type.** On a
+  `MultiDiGraph` it yields the same node list once per combination of parallel edges, so pairing
+  it with your own edge expansion double-counts. `all_simple_edge_paths` is the right one — it
+  hands back the edge keys directly. This was caught by the two-edge-types test, which is a good
+  argument for that test existing.
+- **The cap is checked one path past itself.** A graph with exactly `max_paths` paths comes back
+  complete and unflagged, because nothing was actually dropped. A false truncation flag sends a
+  reviewer hunting for paths that never existed, which is its own kind of wrong.
+- **Path weight is the weight of the objective it reaches, and paths are counted per route.** An
+  objective worth 10 that 40 routes reach contributes 400 to `total_weight`, not 10. That is the
+  intended behaviour — severing one of those 40 routes is worth something — but it does mean
+  `total_weight` is not "the value of everything at risk."
+- **`PathStats` reports `None`, not zero, for lengths when there are no paths.** A graph where no
+  validated route reaches any objective has no shortest path, and "0 hops" would be a false
+  statement dressed as a tidy default. A validator keeps those fields `None` exactly when the
+  count is zero.
+- **Path ids are positional.** `p0000` is just "first after sorting." Re-run extraction on a
+  changed graph and the same id can name a different path. Never persist a path id as a stable
+  reference to a route; pair it with the `graph_id` the `PathSet` carries.
+
+**Not done yet**
+
+- Nothing proposes fixes yet. Task 06 synthesizes the intervention catalog — the candidate
+  changes, each with the set of edges it removes and a cost carrying a label saying whether a
+  human supplied that cost or we assumed it.
+- Extraction does not check graph invariants before it runs. That is deliberate and matches
+  `lumon.io.invariants`: `assert_usable` belongs at the door where a graph enters the pipeline,
+  which is the CLI in task 18, not in the middle of it.
+- The observed and inferred edges that extraction discards are not stored anywhere for later.
+  Task 13 re-reads them from the graph when it generates bypass hypotheses.
