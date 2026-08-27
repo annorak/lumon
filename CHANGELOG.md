@@ -348,3 +348,101 @@ that shape, and there is a test asserting both edges survive.
 - Nothing calls `assert_usable` anywhere, because there is no pipeline and no CLI yet. Task 18
   wires it in at the boundary where a graph is loaded.
 - No generator, so every graph in the repo is hand-written. Task 04 adds the synthetic generator.
+
+---
+
+## Task 04 — Synthetic attack graph generator
+_2026-08-27_
+
+**What changed in plain English**
+
+Every graph in the repo up to now was hand-written, and there were three of them. That does not
+carry us far. Task 10 wants to throw hundreds of randomly shaped graphs at the solvers and check
+the answers, and nobody is hand-writing hundreds of graphs. So this task adds a generator: give it
+a seed and a shape, and it hands back an attack graph.
+
+The interesting part is the second thing it hands back. Alongside the graph comes a `GroundTruth`
+object saying what the answers are — every attack path in the graph, which nodes every path is
+forced through, and what each objective is worth. And the generator knows all of that **because it
+built the graph that way**, not because it went and looked afterwards.
+
+That distinction is the whole point of this task, so it is worth being clear about. Suppose we had
+written the generator the lazy way: scatter some nodes and edges around, then run our own path
+enumerator over the result and write down whatever it said. The tests would look identical, and
+they would be worthless — if our path enumerator had a bug that missed a path, it would miss that
+path when generating the expected answer too, and the test would happily pass. The tests would be
+marking their own homework. So the expected answer has to come from somewhere the code under test
+cannot reach.
+
+The way out is to build the graph in a shape where the answer is forced. Every generated graph is
+a stack of layers: entry points on the bottom, then some middle layers, then the objectives on
+top. Every node in a layer connects to every node in the next one, and a validated edge never goes
+anywhere else — not sideways, not backwards, not skipping a layer. Once that is true, an attack
+path is just "pick one node from each layer," and the complete list of paths is every combination.
+No searching involved. A chokepoint is even simpler: squeeze one middle layer down to a single
+node, and every path has no choice but to go through it. That is what `n_planted_chokepoints` does.
+
+The generator also sprinkles in some `observed` and `inferred` edges — routes that were seen but
+never actually exercised. These are decoys. They exist so that later stages have something to trip
+over, and so that task 13 has raw material for bypass hypotheses. They are placed carefully: a
+decoy always runs forward through the layers, to somewhere the validated edges could already get
+to anyway. That guarantees it adds no new reachability of its own, which is why we can promise
+that filtering the graph down to validated edges leaves you with exactly the paths in the ground
+truth and nothing else.
+
+**New things you can now do**
+
+- Generate a reproducible attack graph of a chosen size and shape from a seed
+- Get the correct answers for that graph handed to you alongside it
+- Pick one of six ready-made shapes by name instead of choosing parameters yourself
+- Regenerate any saved graph exactly, since the parameters that made it are recorded inside it
+
+**Files added or changed**
+
+- `src/lumon/generate/params.py` — `GeneratorParams`, the knobs and their validation
+- `src/lumon/generate/truth.py` — `GroundTruth`, the answers that ship with the graph
+- `src/lumon/generate/generator.py` — `generate(params)`, the layered construction
+- `src/lumon/generate/presets.py` — `TINY`, `SMALL`, `MEDIUM`, `REALISTIC`, `WIDE`, `DEEP`, and
+  the `PRESETS` dict that holds all six
+- `src/lumon/generate/__init__.py` — re-exports the public names; import from here
+- `tests/unit/test_generator.py` — 54 tests, including the one that re-derives the path set with
+  NetworkX and checks it against what the generator claimed
+
+**Gotchas worth knowing**
+
+- **Do not make the ground truth come from our own code.** If you ever find yourself tempted to
+  call path extraction or a solver from inside the generator to work out an expected answer, that
+  is the failure this whole design exists to prevent. Change the construction instead.
+- **The order of the random draws is load-bearing.** `generate` draws chokepoint placement first,
+  then objective weights, then decoy edges, all from one `random.Random`. Reorder those three
+  calls and every existing seed produces a different graph, which will silently change what every
+  downstream test is testing.
+- **The ratios are a fraction of the validated edge count, not of the total.**
+  `observed_edge_ratio=0.2` on a graph with 15 validated edges gives you 3 observed edges, so
+  observed edges are 3 of 18 — about 17% of the file, not 20%. On small graphs the rounding bites:
+  `TINY` has 5 validated edges, so the default `inferred_edge_ratio` of 0.1 rounds to zero and
+  `TINY` has no inferred edges at all. If your test needs one, use a bigger preset.
+- **`minimum_chokepoint_cover_size` is 1 whenever any chokepoint was planted.** That is not a
+  placeholder. Every planted chokepoint is the sole link between two layers, so every path already
+  runs through every one of them, and any single one on its own therefore covers the lot. `DEEP`
+  plants two chokepoints and its minimum cover is still 1.
+- **Decoy edges are allowed to skip past a chokepoint**, and that is deliberate rather than a bug
+  in the placement rule. An unexercised route around the fix is exactly what task 13 wants to
+  queue up for testing. It is safe because a decoy is never validated, and nothing that is not
+  validated can reach the solver.
+- **Every validated edge is a `reaches` edge and every middle node is a `service`.** These graphs
+  are not trying to look like real networks; task 04 puts realism out of scope. The consequence
+  worth knowing is that when task 06 synthesizes interventions from one of these graphs, it will
+  produce exactly one access-control intervention per non-entry node.
+- **`n_planted_chokepoints` cannot exceed `depth`.** Each chokepoint eats one middle layer, so
+  asking for more chokepoints than layers is rejected at construction rather than quietly clamped.
+
+**Not done yet**
+
+- Nothing consumes these graphs yet. Task 05 adds path extraction, and its key test is that the
+  paths it finds match `GroundTruth.path_node_sequences` exactly, for every preset.
+- The generator makes no vulnerability or credential nodes and sets no `enabled_by` on anything,
+  so the task 06 synthesis rules keyed to those will not fire on a generated graph. They get
+  tested against hand-built graphs instead.
+- No graphs are checked into the repo from this. Everything is generated on demand in tests, since
+  a seed and a parameter set reproduce a graph exactly.
