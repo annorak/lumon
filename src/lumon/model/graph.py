@@ -1,11 +1,3 @@
-"""Nodes, edges, and the attack graph they form.
-
-Pure data. Every model here is frozen and forbids unknown fields: frozen so an analysis
-stage cannot mutate the graph it was handed, and `extra="forbid"` so a typo in an input
-file is a loud error instead of a silently dropped key. The only methods are lookups —
-everything that computes lives in the pipeline packages.
-"""
-
 from collections import Counter
 from typing import Annotated, Self
 
@@ -21,21 +13,16 @@ def _check_id(value: str) -> str:
 
 
 EntityId = Annotated[str, AfterValidator(_check_id)]
-"""An id used to reference a node or an edge. Ids appear in paths, coverage matrices, and
-reports, so whitespace in one turns every downstream join into a guessing game."""
 
 
 def reject_duplicate_ids(ids: list[str], kind: str) -> None:
-    """Raise if any id appears twice. Shared with `lumon.model.path`, which owes a `PathSet`
-    the same guarantee a graph owes its nodes and edges: an id names exactly one thing."""
     duplicates = sorted(id_ for id_, count in Counter(ids).items() if count > 1)
     if duplicates:
         raise ValueError(f"duplicate {kind} ids: {', '.join(duplicates)}")
 
 
 class Node(BaseModel):
-    """One thing an attacker interacts with: an asset, service, identity, credential,
-    boundary, vulnerability, entry point, or objective."""
+    """Object an attacker interacts with."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -43,12 +30,10 @@ class Node(BaseModel):
     type: NodeType
     label: str
     attributes: dict[str, str] = Field(default_factory=dict)
-    # Only objectives carry a weight: how much the business loses if this one falls. It is
-    # what makes "severed 81% of weighted validated paths" mean anything.
     weight: float | None = None
 
     @model_validator(mode="after")
-    def _check_weight_matches_type(self) -> Self:
+    def _validate_weight(self) -> Self:
         if self.type is NodeType.OBJECTIVE:
             if self.weight is None or self.weight <= 0:
                 raise ValueError(f"objective node {self.id!r} needs a weight greater than 0")
@@ -58,7 +43,7 @@ class Node(BaseModel):
 
 
 class Edge(BaseModel):
-    """One transition an attacker makes, from `source` to `target`."""
+    """Directed attacker transition."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -67,24 +52,22 @@ class Edge(BaseModel):
     target: str
     type: EdgeType
     evidence: Evidence
-    # Node id of the vulnerability or credential that makes this transition possible.
+    # Node ID of the vulnerability or credential that enables this transition.
     enabled_by: str | None = None
     attributes: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def _check_not_self_loop(self) -> Self:
+    def _validate_no_self_loop(self) -> Self:
         if self.source == self.target:
             raise ValueError(f"edge {self.id!r} is a self-loop on node {self.source!r}")
         return self
 
 
 class AttackGraph(BaseModel):
-    """A set of nodes and the attacker transitions between them.
+    """Nodes and attacker transitions before semantic validation.
 
-    Whether an edge's endpoints actually exist is deliberately *not* checked here. Ingest
-    builds partial graphs as evidence arrives, so a graph that references a node it does
-    not yet contain must be constructible. `lumon.io.invariants` is where a graph is judged
-    usable.
+    Missing node references are allowed so partial graph input can be represented. Call
+    `check_invariants` before analysis.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -94,20 +77,18 @@ class AttackGraph(BaseModel):
     metadata: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def _check_ids_unique(self) -> Self:
+    def _validate_unique_ids(self) -> Self:
         reject_duplicate_ids([node.id for node in self.nodes], "node")
         reject_duplicate_ids([edge.id for edge in self.edges], "edge")
         return self
 
     def node_by_id(self, node_id: str) -> Node:
-        """The node with this id. Raises `KeyError` if the graph has no such node."""
         for node in self.nodes:
             if node.id == node_id:
                 return node
         raise KeyError(f"no node with id {node_id!r}")
 
     def edge_by_id(self, edge_id: str) -> Edge:
-        """The edge with this id. Raises `KeyError` if the graph has no such edge."""
         for edge in self.edges:
             if edge.id == edge_id:
                 return edge
@@ -126,6 +107,4 @@ class AttackGraph(BaseModel):
         return self.nodes_of_type(NodeType.OBJECTIVE)
 
     def validated_edges(self) -> list[Edge]:
-        """The edges an attacker proved. These are the only ones any result may rest on —
-        see `Evidence` for what the other two levels are allowed to influence."""
         return [edge for edge in self.edges if edge.evidence is Evidence.VALIDATED]

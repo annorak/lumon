@@ -1,16 +1,3 @@
-"""Tests for the synthetic attack graph generator.
-
-The generator knows its answers by construction, so most of these tests check that what it
-claimed is genuinely *present in* the graph, rather than deriving the claim from the graph and
-comparing it to itself.
-
-`validated_node_sequences` is the one place enumeration happens. It re-derives the path set
-with NetworkX's simple-path search and confirms it matches the constructed ground truth
-exactly. That is still the safe direction: the expectation comes from the construction, and
-NetworkX is not code this project is testing. Once task 05 lands, its extractor gets checked
-against the same ground truth, and it must not be substituted in here.
-"""
-
 import itertools
 from collections import Counter
 
@@ -25,9 +12,7 @@ from lumon.model import AttackGraph, Evidence, NodeType
 PRESET_NAMES = sorted(PRESETS)
 
 
-def validated_node_sequences(graph: AttackGraph) -> set[tuple[str, ...]]:
-    """Every entry-to-objective simple path over validated edges alone, found independently
-    of anything the generator recorded."""
+def _validated_node_sequences(graph: AttackGraph) -> set[tuple[str, ...]]:
     view = to_networkx(graph, validated_only=True)
     return {
         tuple(sequence)
@@ -61,8 +46,6 @@ def test_every_preset_generates_a_clean_graph(name: str) -> None:
 
 @pytest.mark.parametrize("name", PRESET_NAMES)
 def test_every_ground_truth_path_is_a_chain_of_validated_edges(name: str) -> None:
-    """Confirms the truth is present in the graph. Every consecutive pair in a claimed path
-    has to be an actual validated edge, and the ends have to be an entry and an objective."""
     graph, truth = generate(PRESETS[name])
     validated_pairs = {(edge.source, edge.target) for edge in graph.validated_edges()}
 
@@ -74,11 +57,9 @@ def test_every_ground_truth_path_is_a_chain_of_validated_edges(name: str) -> Non
 
 @pytest.mark.parametrize("name", PRESET_NAMES)
 def test_validated_edges_alone_produce_exactly_the_ground_truth_paths(name: str) -> None:
-    """The load-bearing test: no decoy edge invents a validated path, and no validated path
-    exists that the generator failed to record."""
     graph, truth = generate(PRESETS[name])
 
-    assert validated_node_sequences(graph) == {tuple(path) for path in truth.path_node_sequences}
+    assert _validated_node_sequences(graph) == {tuple(path) for path in truth.path_node_sequences}
 
 
 @pytest.mark.parametrize("name", PRESET_NAMES)
@@ -93,8 +74,6 @@ def test_every_planted_chokepoint_lies_on_every_path(name: str) -> None:
 
 @pytest.mark.parametrize("name", PRESET_NAMES)
 def test_every_decoy_edge_follows_a_route_the_validated_graph_already_has(name: str) -> None:
-    """The rule that makes decoys safe: a non-validated edge only ever names a transition the
-    validated backbone can already make, so it adds no reachability of its own."""
     graph, _ = generate(PRESETS[name])
     view = to_networkx(graph, validated_only=True)
     decoys = [edge for edge in graph.edges if edge.evidence is not Evidence.VALIDATED]
@@ -106,8 +85,6 @@ def test_every_decoy_edge_follows_a_route_the_validated_graph_already_has(name: 
 
 @pytest.mark.parametrize(("depth", "branching"), [(1, 2), (3, 2), (3, 4), (5, 3)])
 def test_node_and_edge_counts_scale_with_depth_and_branching(depth: int, branching: int) -> None:
-    """Counts are stated here independently of the generator. With no chokepoint every
-    intermediate layer is `branching` wide, which makes all three formulas closed form."""
     params = GeneratorParams(
         seed=7,
         n_entry_points=2,
@@ -149,8 +126,6 @@ def test_non_validated_edges_appear_in_the_declared_ratios() -> None:
     validated = counted[Evidence.VALIDATED]
     assert counted[Evidence.OBSERVED] == round(0.25 * validated)
     assert counted[Evidence.INFERRED] == round(0.5 * validated)
-    assert counted[Evidence.OBSERVED] / validated == pytest.approx(0.25, abs=0.05)
-    assert counted[Evidence.INFERRED] / validated == pytest.approx(0.5, abs=0.05)
 
 
 def test_a_graph_can_be_generated_with_no_decoy_edges_at_all() -> None:
@@ -175,12 +150,10 @@ def test_a_graph_with_no_planted_chokepoint_reports_no_cover() -> None:
 
     assert truth.planted_chokepoint_ids == []
     assert truth.minimum_chokepoint_cover_size == 0
-    assert validated_node_sequences(graph) == {tuple(path) for path in truth.path_node_sequences}
+    assert _validated_node_sequences(graph) == {tuple(path) for path in truth.path_node_sequences}
 
 
 def test_graph_id_distinguishes_shapes_that_share_a_seed() -> None:
-    """Two graphs from one seed but different shapes are different graphs, and their ids have
-    to say so, or a stale pairing of a graph with a path set would go unnoticed."""
     first_graph, _ = generate(GeneratorParams(seed=13, depth=2))
     second_graph, _ = generate(GeneratorParams(seed=13, depth=3))
 

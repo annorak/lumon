@@ -1,18 +1,10 @@
-"""Tests for the domain model.
-
-The sample graph is the motivating kill chain in miniature: an internet-facing entry
-point, an exploited service, an over-permissioned identity, readable credential material,
-and a cloud objective at the end. Two of its edges are unvalidated, so the tests can prove
-that the evidence tag actually keeps them out of anything the solver would see.
-"""
-
 import pytest
 from pydantic import ValidationError
 
 from lumon.model import AttackGraph, Edge, EdgeType, Evidence, Node, NodeType
 
 
-def build_graph() -> AttackGraph:
+def _build_graph() -> AttackGraph:
     return AttackGraph(
         nodes=[
             Node(id="n_entry", type=NodeType.ENTRY_POINT, label="internet-facing ingress"),
@@ -72,7 +64,7 @@ def build_graph() -> AttackGraph:
 
 
 def test_accessors_return_the_right_things() -> None:
-    graph = build_graph()
+    graph = _build_graph()
 
     assert graph.node_by_id("n_cloud").label == "cloud account"
     assert graph.edge_by_id("e_exploit").enabled_by == "n_vuln"
@@ -86,7 +78,7 @@ def test_accessors_return_the_right_things() -> None:
 
 
 def test_lookups_raise_key_error_for_unknown_ids() -> None:
-    graph = build_graph()
+    graph = _build_graph()
 
     with pytest.raises(KeyError):
         graph.node_by_id("n_missing")
@@ -95,7 +87,7 @@ def test_lookups_raise_key_error_for_unknown_ids() -> None:
 
 
 def test_validated_edges_excludes_observed_and_inferred() -> None:
-    graph = build_graph()
+    graph = _build_graph()
 
     assert [edge.id for edge in graph.validated_edges()] == [
         "e_reach",
@@ -177,8 +169,8 @@ def test_unknown_field_is_rejected() -> None:
         )
 
 
-def test_models_are_frozen() -> None:
-    graph = build_graph()
+def test_model_fields_cannot_be_reassigned() -> None:
+    graph = _build_graph()
 
     with pytest.raises(ValidationError, match="frozen"):
         graph.nodes[0].label = "renamed"
@@ -187,13 +179,12 @@ def test_models_are_frozen() -> None:
 
 
 def test_json_round_trip_preserves_the_graph() -> None:
-    graph = build_graph()
+    graph = _build_graph()
 
     assert AttackGraph.model_validate_json(graph.model_dump_json()) == graph
 
 
-def test_edges_may_reference_nodes_the_graph_does_not_contain() -> None:
-    """Ingest builds partial graphs, so this must construct. Task 03 catches it."""
+def test_graph_allows_dangling_edges() -> None:
     graph = AttackGraph(
         nodes=[Node(id="n_entry", type=NodeType.ENTRY_POINT, label="ingress")],
         edges=[

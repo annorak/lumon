@@ -1,5 +1,3 @@
-"""Tests for reading and writing graphs as JSON."""
-
 import json
 import re
 from pathlib import Path
@@ -46,3 +44,8 @@ def test_export_json_schema_describes_the_attack_graph(tmp_path: Path) -> None:
     schema = json.loads(path.read_text())
     assert schema["title"] == "AttackGraph"
     assert set(schema["properties"]) == {"nodes", "edges", "metadata"}
+    assert schema["description"]
+    assert all(
+        schema["$defs"][name].get("description")
+        for name in ("Node", "Edge", "NodeType", "EdgeType", "Evidence")
+    )

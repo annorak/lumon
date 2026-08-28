@@ -1,5 +1,3 @@
-"""Tests for the NetworkX conversion."""
-
 from pathlib import Path
 
 import pytest
@@ -37,8 +35,6 @@ def test_validated_only_drops_weaker_edges_and_keeps_every_node(graph: AttackGra
 
 
 def test_parallel_edges_between_one_pair_both_survive(graph: AttackGraph) -> None:
-    """Why this is a `MultiDiGraph`. The service account both `reaches` and `can_access` the
-    cloud account; a `DiGraph` would keep one and silently drop the other."""
     converted = to_networkx(graph)
 
     assert converted.number_of_edges("n_identity", "n_cloud") == 2

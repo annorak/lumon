@@ -1,9 +1,3 @@
-"""Tests for the invariant checks — one per violation code.
-
-Each test builds the smallest graph that trips the code it is about. The baseline is two
-nodes joined by one validated edge, which is the smallest graph with no violations at all.
-"""
-
 from pathlib import Path
 
 import pytest
@@ -17,7 +11,7 @@ SERVICE = Node(id="n_service", type=NodeType.SERVICE, label="checkout-api")
 CLOUD = Node(id="n_cloud", type=NodeType.OBJECTIVE, label="production cloud account", weight=10.0)
 
 
-def build_edge(
+def _edge(
     edge_id: str,
     source: str,
     target: str,
@@ -34,22 +28,22 @@ def build_edge(
     )
 
 
-def find(graph: AttackGraph, code: str) -> list[Violation]:
+def _violations_with_code(graph: AttackGraph, code: str) -> list[Violation]:
     return [violation for violation in check_invariants(graph).violations if violation.code == code]
 
 
 def test_dangling_edge_source() -> None:
-    graph = AttackGraph(nodes=[ENTRY, CLOUD], edges=[build_edge("e_reach", "n_absent", "n_cloud")])
+    graph = AttackGraph(nodes=[ENTRY, CLOUD], edges=[_edge("e_reach", "n_absent", "n_cloud")])
 
-    [violation] = find(graph, "DANGLING_EDGE_SOURCE")
+    [violation] = _violations_with_code(graph, "DANGLING_EDGE_SOURCE")
     assert violation.severity is Severity.ERROR
     assert violation.subject_id == "e_reach"
 
 
 def test_dangling_edge_target() -> None:
-    graph = AttackGraph(nodes=[ENTRY, CLOUD], edges=[build_edge("e_reach", "n_entry", "n_absent")])
+    graph = AttackGraph(nodes=[ENTRY, CLOUD], edges=[_edge("e_reach", "n_entry", "n_absent")])
 
-    [violation] = find(graph, "DANGLING_EDGE_TARGET")
+    [violation] = _violations_with_code(graph, "DANGLING_EDGE_TARGET")
     assert violation.severity is Severity.ERROR
     assert violation.subject_id == "e_reach"
 
@@ -57,20 +51,18 @@ def test_dangling_edge_target() -> None:
 def test_dangling_enabled_by() -> None:
     graph = AttackGraph(
         nodes=[ENTRY, CLOUD],
-        edges=[build_edge("e_reach", "n_entry", "n_cloud", enabled_by="n_absent")],
+        edges=[_edge("e_reach", "n_entry", "n_cloud", enabled_by="n_absent")],
     )
 
-    [violation] = find(graph, "DANGLING_ENABLED_BY")
+    [violation] = _violations_with_code(graph, "DANGLING_ENABLED_BY")
     assert violation.severity is Severity.ERROR
     assert violation.subject_id == "e_reach"
 
 
 def test_no_entry_points() -> None:
-    graph = AttackGraph(
-        nodes=[SERVICE, CLOUD], edges=[build_edge("e_access", "n_service", "n_cloud")]
-    )
+    graph = AttackGraph(nodes=[SERVICE, CLOUD], edges=[_edge("e_access", "n_service", "n_cloud")])
 
-    [violation] = find(graph, "NO_ENTRY_POINTS")
+    [violation] = _violations_with_code(graph, "NO_ENTRY_POINTS")
     assert violation.severity is Severity.ERROR
     assert violation.subject_id is None
 
@@ -78,7 +70,7 @@ def test_no_entry_points() -> None:
 def test_no_objectives(graphs_dir: Path) -> None:
     graph = load_graph(graphs_dir / "no_objective.json")
 
-    [violation] = find(graph, "NO_OBJECTIVES")
+    [violation] = _violations_with_code(graph, "NO_OBJECTIVES")
     assert violation.severity is Severity.ERROR
     assert violation.subject_id is None
 
@@ -86,18 +78,18 @@ def test_no_objectives(graphs_dir: Path) -> None:
 def test_no_validated_edges() -> None:
     graph = AttackGraph(
         nodes=[ENTRY, CLOUD],
-        edges=[build_edge("e_reach", "n_entry", "n_cloud", evidence=Evidence.OBSERVED)],
+        edges=[_edge("e_reach", "n_entry", "n_cloud", evidence=Evidence.OBSERVED)],
     )
 
-    [violation] = find(graph, "NO_VALIDATED_EDGES")
+    [violation] = _violations_with_code(graph, "NO_VALIDATED_EDGES")
     assert violation.severity is Severity.ERROR
     assert violation.subject_id is None
 
 
 def test_orphan_node() -> None:
-    graph = build_graph_with_an_orphan()
+    graph = _graph_with_orphan()
 
-    [violation] = find(graph, "ORPHAN_NODE")
+    [violation] = _violations_with_code(graph, "ORPHAN_NODE")
     assert violation.severity is Severity.WARNING
     assert violation.subject_id == "n_service"
 
@@ -106,12 +98,12 @@ def test_unreachable_objective() -> None:
     graph = AttackGraph(
         nodes=[ENTRY, SERVICE, CLOUD],
         edges=[
-            build_edge("e_reach", "n_entry", "n_service"),
-            build_edge("e_access", "n_service", "n_cloud", evidence=Evidence.OBSERVED),
+            _edge("e_reach", "n_entry", "n_service"),
+            _edge("e_access", "n_service", "n_cloud", evidence=Evidence.OBSERVED),
         ],
     )
 
-    [violation] = find(graph, "UNREACHABLE_OBJECTIVE")
+    [violation] = _violations_with_code(graph, "UNREACHABLE_OBJECTIVE")
     assert violation.severity is Severity.WARNING
     assert violation.subject_id == "n_cloud"
 
@@ -120,12 +112,12 @@ def test_dead_entry_point() -> None:
     graph = AttackGraph(
         nodes=[ENTRY, SERVICE, CLOUD],
         edges=[
-            build_edge("e_reach", "n_entry", "n_service", evidence=Evidence.OBSERVED),
-            build_edge("e_access", "n_service", "n_cloud"),
+            _edge("e_reach", "n_entry", "n_service", evidence=Evidence.OBSERVED),
+            _edge("e_access", "n_service", "n_cloud"),
         ],
     )
 
-    [violation] = find(graph, "DEAD_ENTRY_POINT")
+    [violation] = _violations_with_code(graph, "DEAD_ENTRY_POINT")
     assert violation.severity is Severity.WARNING
     assert violation.subject_id == "n_entry"
 
@@ -133,21 +125,19 @@ def test_dead_entry_point() -> None:
 def test_enabled_by_wrong_type() -> None:
     graph = AttackGraph(
         nodes=[ENTRY, SERVICE, CLOUD],
-        edges=[build_edge("e_reach", "n_entry", "n_cloud", enabled_by="n_service")],
+        edges=[_edge("e_reach", "n_entry", "n_cloud", enabled_by="n_service")],
     )
 
-    [violation] = find(graph, "ENABLED_BY_WRONG_TYPE")
+    [violation] = _violations_with_code(graph, "ENABLED_BY_WRONG_TYPE")
     assert violation.severity is Severity.WARNING
     assert violation.subject_id == "e_reach"
 
 
 def test_a_vulnerability_or_credential_enabler_is_accepted(graphs_dir: Path) -> None:
-    """`valid_small` uses both, so a clean report here is what proves the rule is not
-    accidentally rejecting the two types that are allowed."""
     graph = load_graph(graphs_dir / "valid_small.json")
 
     assert {edge.enabled_by for edge in graph.edges} == {None, "n_vuln", "n_cred"}
-    assert find(graph, "ENABLED_BY_WRONG_TYPE") == []
+    assert _violations_with_code(graph, "ENABLED_BY_WRONG_TYPE") == []
 
 
 def test_a_clean_graph_has_no_violations(graphs_dir: Path) -> None:
@@ -158,7 +148,7 @@ def test_a_clean_graph_has_no_violations(graphs_dir: Path) -> None:
 
 
 def test_warnings_alone_leave_the_graph_usable() -> None:
-    report = check_invariants(build_graph_with_an_orphan())
+    report = check_invariants(_graph_with_orphan())
 
     assert report.errors == []
     assert [violation.code for violation in report.warnings] == ["ORPHAN_NODE"]
@@ -173,8 +163,6 @@ def test_any_error_makes_the_graph_unusable(graphs_dir: Path) -> None:
 
 
 def test_a_dangling_edge_hides_the_path_rather_than_crashing(graphs_dir: Path) -> None:
-    """The failure this module exists to catch: `dangling_edge.json` is the two-hop path to
-    the objective with one id typo'd. It loads fine, and the objective is simply gone."""
     report = check_invariants(load_graph(graphs_dir / "dangling_edge.json"))
 
     assert {violation.code for violation in report.warnings} == {
@@ -191,10 +179,10 @@ def test_assert_usable_raises_on_an_error_and_lists_it(graphs_dir: Path) -> None
 
 
 def test_assert_usable_is_silent_when_there_are_only_warnings() -> None:
-    assert_usable(build_graph_with_an_orphan())
+    assert_usable(_graph_with_orphan())
 
 
-def build_graph_with_an_orphan() -> AttackGraph:
+def _graph_with_orphan() -> AttackGraph:
     return AttackGraph(
-        nodes=[ENTRY, SERVICE, CLOUD], edges=[build_edge("e_reach", "n_entry", "n_cloud")]
+        nodes=[ENTRY, SERVICE, CLOUD], edges=[_edge("e_reach", "n_entry", "n_cloud")]
     )

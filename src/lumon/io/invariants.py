@@ -1,15 +1,4 @@
-"""Whether a graph is usable for analysis, and what is wrong with it if it is not.
-
-Checking **returns a report and never raises**, because a malformed graph is not a crash,
-it is a quietly wrong answer. Consider an edge whose target is `n_clod` where the author
-meant `n_cloud`. Nothing fails: the graph loads, the path enumerator simply never finds a
-route to the objective, the solver dutifully severs the paths it was given, and the report
-says the environment has fewer attack paths than it really does. Under-reporting risk is the
-worst thing this system can do. So a caller gets the whole list of problems at once, decides
-what to do about it, and can hand that list back to whoever supplied the graph.
-
-`assert_usable` is the strict door, for callers that want the pipeline to stop instead.
-"""
+"""Semantic validation for attack graphs."""
 
 from enum import StrEnum
 
@@ -18,22 +7,14 @@ from pydantic import BaseModel, ConfigDict
 from lumon.model import AttackGraph, Node, NodeType
 
 ENABLER_TYPES = frozenset({NodeType.VULNERABILITY, NodeType.CREDENTIAL})
-"""The node types that can make a transition possible. An edge's `enabled_by` naming
-anything else is a modelling mistake rather than a broken reference."""
 
 
 class Severity(StrEnum):
-    """`ERROR` means analysis over this graph would produce a wrong answer. `WARNING` means
-    the graph is analysable but something in it is probably not what its author intended."""
-
     ERROR = "error"
     WARNING = "warning"
 
 
 class Violation(BaseModel):
-    """One thing wrong with a graph. `subject_id` is the node or edge at fault, or `None`
-    for a problem with the graph as a whole."""
-
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     code: str
@@ -43,8 +24,6 @@ class Violation(BaseModel):
 
 
 class InvariantReport(BaseModel):
-    """Everything `check_invariants` found."""
-
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     violations: list[Violation]
@@ -61,16 +40,15 @@ class InvariantReport(BaseModel):
 
     @property
     def is_usable(self) -> bool:
-        """True when nothing found would make the analysis wrong. Warnings do not block."""
         return not self.errors
 
 
 class GraphInvariantError(Exception):
-    """A graph failed at least one `ERROR` invariant."""
+    """Graph is not usable for analysis."""
 
 
 def check_invariants(graph: AttackGraph) -> InvariantReport:
-    """Everything wrong with this graph. Never raises — see the module docstring."""
+    """Return all semantic violations without raising."""
     return InvariantReport(
         violations=[
             *_check_graph_completeness(graph),
@@ -82,7 +60,7 @@ def check_invariants(graph: AttackGraph) -> InvariantReport:
 
 
 def assert_usable(graph: AttackGraph) -> None:
-    """Raise `GraphInvariantError` listing every error, if the graph is not usable."""
+    """Raise if the graph has any error-level violations."""
     report = check_invariants(graph)
     if not report.is_usable:
         listed = "\n".join(
@@ -92,8 +70,6 @@ def assert_usable(graph: AttackGraph) -> None:
 
 
 def _check_graph_completeness(graph: AttackGraph) -> list[Violation]:
-    """The three things without which there is nothing to analyse: somewhere to start,
-    somewhere worth reaching, and a transition an attacker actually proved."""
     violations: list[Violation] = []
     if not graph.entry_points():
         violations.append(
@@ -125,8 +101,6 @@ def _check_graph_completeness(graph: AttackGraph) -> list[Violation]:
 
 
 def _check_edge_endpoints(graph: AttackGraph) -> list[Violation]:
-    """Edges pointing at nodes the graph does not contain. This is the check the whole module
-    exists for: an unresolvable endpoint silently deletes an attack path."""
     node_ids = {node.id for node in graph.nodes}
     violations: list[Violation] = []
     for edge in graph.edges:
@@ -144,8 +118,6 @@ def _check_edge_endpoints(graph: AttackGraph) -> list[Violation]:
 
 
 def _check_edge_enablers(graph: AttackGraph) -> list[Violation]:
-    """Edges whose `enabled_by` does not resolve, or resolves to something that cannot make a
-    transition possible."""
     node_types = {node.id: node.type for node in graph.nodes}
     violations: list[Violation] = []
     for edge in graph.edges:
@@ -175,13 +147,6 @@ def _check_edge_enablers(graph: AttackGraph) -> list[Violation]:
 
 
 def _check_node_connectivity(graph: AttackGraph) -> list[Violation]:
-    """Nodes not wired into anything the analysis will traverse. All warnings: the graph is
-    still analysable as it stands, and each of these usually means it is incomplete.
-
-    A node counts as referenced if any edge names it as source, target, *or* `enabled_by`.
-    Vulnerability nodes are only ever named by `enabled_by`, so leaving that out would flag
-    every one of them and make the warning worthless.
-    """
     referenced = {
         node_id
         for edge in graph.edges

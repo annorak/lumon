@@ -1,16 +1,10 @@
-"""Tests for the `Path` and `PathSet` models.
-
-These check the model in isolation. Extraction is tested separately, in
-`test_path_extraction.py`, against graphs whose answers are known.
-"""
-
 import pytest
 from pydantic import ValidationError
 
 from lumon.model import Path, PathSet
 
 
-def build_path(path_id: str = "p0000", objective: str = "n_obj", weight: float = 10.0) -> Path:
+def _build_path(path_id: str = "p0000", objective: str = "n_obj", weight: float = 10.0) -> Path:
     return Path(
         id=path_id,
         edge_ids=["e_one", "e_two"],
@@ -22,7 +16,7 @@ def build_path(path_id: str = "p0000", objective: str = "n_obj", weight: float =
 
 
 def test_a_well_formed_path_is_accepted() -> None:
-    path = build_path()
+    path = _build_path()
 
     assert path.edge_ids == ["e_one", "e_two"]
     assert path.node_ids == ["n_entry", "n_middle", "n_obj"]
@@ -64,7 +58,7 @@ def test_a_malformed_path_is_rejected(overrides: dict[str, object], expected: st
 
 
 def test_a_path_cannot_be_mutated_after_construction() -> None:
-    path = build_path()
+    path = _build_path()
 
     with pytest.raises(ValidationError, match="frozen"):
         path.weight = 99.0
@@ -72,28 +66,27 @@ def test_a_path_cannot_be_mutated_after_construction() -> None:
 
 def test_a_path_set_rejects_duplicate_path_ids() -> None:
     with pytest.raises(ValidationError, match="duplicate path ids: p0000"):
-        PathSet(paths=[build_path("p0000"), build_path("p0000")], truncated=False)
+        PathSet(paths=[_build_path("p0000"), _build_path("p0000")], truncated=False)
 
 
 def test_a_truncated_path_set_without_a_reason_is_rejected() -> None:
     with pytest.raises(ValidationError, match="must carry a truncation_reason"):
-        PathSet(paths=[build_path()], truncated=True)
+        PathSet(paths=[_build_path()], truncated=True)
 
 
 def test_a_truncated_path_set_with_an_empty_reason_is_rejected() -> None:
     with pytest.raises(ValidationError, match="must carry a truncation_reason"):
-        PathSet(paths=[build_path()], truncated=True, truncation_reason="")
+        PathSet(paths=[_build_path()], truncated=True, truncation_reason="")
 
 
 def test_a_path_set_must_state_whether_it_is_complete() -> None:
-    """`truncated` has no default, so a partial set cannot be built that looks complete."""
     with pytest.raises(ValidationError, match="truncated"):
         PathSet.model_validate({"paths": []})
 
 
 def test_total_weight_adds_every_path_up() -> None:
     path_set = PathSet(
-        paths=[build_path("p0000", weight=10.0), build_path("p0001", weight=2.5)],
+        paths=[_build_path("p0000", weight=10.0), _build_path("p0001", weight=2.5)],
         truncated=False,
     )
 
@@ -107,9 +100,9 @@ def test_total_weight_of_an_empty_set_is_zero() -> None:
 def test_by_objective_groups_paths_and_omits_unreached_objectives() -> None:
     path_set = PathSet(
         paths=[
-            build_path("p0000", objective="n_cloud"),
-            build_path("p0001", objective="n_cloud"),
-            build_path("p0002", objective="n_database"),
+            _build_path("p0000", objective="n_cloud"),
+            _build_path("p0001", objective="n_cloud"),
+            _build_path("p0002", objective="n_database"),
         ],
         truncated=False,
     )
@@ -123,7 +116,7 @@ def test_by_objective_groups_paths_and_omits_unreached_objectives() -> None:
 
 def test_weights_by_id_keys_every_weight_to_its_path() -> None:
     path_set = PathSet(
-        paths=[build_path("p0000", weight=10.0), build_path("p0001", weight=4.0)],
+        paths=[_build_path("p0000", weight=10.0), _build_path("p0001", weight=4.0)],
         truncated=False,
     )
 
@@ -132,7 +125,7 @@ def test_weights_by_id_keys_every_weight_to_its_path() -> None:
 
 def test_a_path_set_survives_a_round_trip_through_json() -> None:
     path_set = PathSet(
-        paths=[build_path()],
+        paths=[_build_path()],
         truncated=True,
         truncation_reason="stopped at the max_paths cap of 1",
         graph_id="synthetic-abcd1234",

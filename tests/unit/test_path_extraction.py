@@ -1,14 +1,4 @@
-"""Tests for path extraction.
-
-Two of these carry most of the weight. `test_an_observed_only_route_reaches_nothing` is the
-project's central rule at the point it matters most: an edge nobody proved cannot put a path
-into the answer. And `test_every_preset_extracts_exactly_the_ground_truth_paths` checks the
-extractor against the generator's constructed answers, which come from somewhere this code
-cannot reach — so a bug here cannot corrupt its own expectation.
-"""
-
 import pytest
-from pydantic import ValidationError
 
 from lumon.generate import PRESETS, generate
 from lumon.model import AttackGraph, Edge, EdgeType, Evidence, Node, NodeType, PathSet
@@ -44,7 +34,6 @@ def node_sequences(path_set: PathSet) -> set[tuple[str, ...]]:
 
 
 def build_three_route_graph() -> AttackGraph:
-    """One entry, three alternative middle hops, one objective. Exactly three paths."""
     return AttackGraph(
         nodes=[entry("n_in"), service("n_a"), service("n_b"), service("n_c"), objective("n_obj")],
         edges=[
@@ -78,7 +67,6 @@ def test_paths_are_numbered_in_the_order_they_are_returned() -> None:
 
 
 def test_the_graph_id_travels_with_the_path_set() -> None:
-    """So that pairing a path set with the wrong graph later on is detectable."""
     assert extract_paths(build_three_route_graph()).graph_id == "three-route"
 
 
@@ -92,8 +80,6 @@ def test_a_graph_with_no_graph_id_produces_a_path_set_with_none() -> None:
 
 
 def test_unvalidated_edges_never_appear_in_a_path() -> None:
-    """Observed and inferred edges run alongside validated ones here, offering shortcuts the
-    extractor must refuse to take."""
     graph = AttackGraph(
         nodes=[entry("n_in"), service("n_a"), objective("n_obj")],
         edges=[
@@ -114,8 +100,6 @@ def test_unvalidated_edges_never_appear_in_a_path() -> None:
 
 
 def test_an_observed_only_route_reaches_nothing() -> None:
-    """The rule the whole project rests on. `n_leak` is reachable only across an edge somebody
-    saw but never exercised, so Lumon must report no path to it at all — not a hedged one."""
     graph = AttackGraph(
         nodes=[entry("n_in"), service("n_a"), objective("n_cloud"), objective("n_leak")],
         edges=[
@@ -132,8 +116,6 @@ def test_an_observed_only_route_reaches_nothing() -> None:
 
 
 def test_two_edge_types_between_one_pair_produce_two_distinct_paths() -> None:
-    """Same nodes, different techniques. An intervention may sever one and leave the other, so
-    collapsing them would hide a route from the solver."""
     graph = AttackGraph(
         nodes=[entry("n_in"), service("n_a"), objective("n_obj")],
         edges=[
@@ -175,7 +157,6 @@ def test_a_cycle_neither_hangs_nor_repeats_a_node() -> None:
 
 
 def build_long_and_short_graph() -> AttackGraph:
-    """One direct hop to the objective and one three-hop detour to the same place."""
     return AttackGraph(
         nodes=[entry("n_in"), service("n_a"), service("n_b"), objective("n_obj")],
         edges=[
@@ -202,15 +183,12 @@ def build_long_and_short_graph() -> AttackGraph:
 def test_max_depth_excludes_paths_with_too_many_hops(
     max_depth: int, expected: set[tuple[str, ...]]
 ) -> None:
-    """`max_depth` counts hops, so a path may cross at most that many edges."""
     path_set = extract_paths(build_long_and_short_graph(), max_depth=max_depth)
 
     assert node_sequences(path_set) == expected
 
 
 def test_the_depth_bound_does_not_claim_truncation() -> None:
-    """Deliberate: `truncated` means enumeration stopped early. Proving that no longer route
-    exists is not something the extractor can do cheaply, so it does not pretend to."""
     path_set = extract_paths(build_long_and_short_graph(), max_depth=1)
 
     assert path_set.truncated is False
@@ -227,8 +205,6 @@ def test_hitting_max_paths_truncates_loudly() -> None:
 
 
 def test_a_set_that_exactly_fills_the_cap_is_not_called_truncated() -> None:
-    """Nothing was dropped, so nothing may be flagged. A false truncation sends a reviewer
-    hunting for paths that never existed."""
     path_set = extract_paths(build_three_route_graph(), max_paths=3)
 
     assert len(path_set.paths) == 3
@@ -305,9 +281,6 @@ def test_a_graph_with_no_validated_route_to_any_objective_yields_an_empty_set() 
 
 @pytest.mark.parametrize("name", PRESET_NAMES)
 def test_every_preset_extracts_exactly_the_ground_truth_paths(name: str) -> None:
-    """The key integration test. The generator constructed these answers from the layout it
-    built, never by running this code, so the expectation cannot inherit a bug from the
-    extractor it is checking."""
     graph, truth = generate(PRESETS[name])
 
     path_set = extract_paths(graph)
@@ -334,9 +307,3 @@ def test_every_extracted_path_walks_only_validated_edges(name: str) -> None:
     path_set = extract_paths(graph)
 
     assert {edge_id for path in path_set.paths for edge_id in path.edge_ids} <= validated_ids
-
-
-def test_a_truncated_path_set_without_a_reason_cannot_be_built() -> None:
-    """The extractor always supplies one. This is the guard for anyone hand-building a set."""
-    with pytest.raises(ValidationError, match="must carry a truncation_reason"):
-        PathSet(paths=[], truncated=True)

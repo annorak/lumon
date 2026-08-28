@@ -1,5 +1,3 @@
-"""Getting attack graphs in and out of files, and deciding whether one is usable."""
-
 from lumon.io.invariants import (
     GraphInvariantError,
     InvariantReport,
