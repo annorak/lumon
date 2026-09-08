@@ -627,3 +627,58 @@ without a patch candidate and could make a later answer look complete when it wa
 - `SERVICE_REMOVAL` is modeled, but automatic synthesis does not propose removing a service.
 - Lumon records whether side effects were declared, but it cannot discover which
   legitimate workloads a change might break.
+
+## Task 07 — Coverage matrix
+_2026-09-08_
+
+**What changed in plain English**
+
+Up to now Lumon had one list of validated attack paths and another list of proposed
+environment changes. Nothing directly connected the two. This task adds that connection.
+
+The coverage matrix is a grid. Each row is one proposed change, each column is one
+validated attack path, and a cell is 1 when that change removes an edge used by that path.
+Every calculation from here on is arithmetic on this grid. The later solvers will choose
+rows that cover the most useful columns for the lowest cost.
+
+Some paths may have an all-zero column because no proposed change can sever them. Lumon
+reports those paths and their total weight, and says full severance is impossible. It does
+not hide them or pretend the remaining paths are the whole result.
+
+The grid stores positions, so row 0 and column 0 only have meaning when paired with the
+original intervention and path lists. Lumon now records a repeatable fingerprint of those
+inputs and rejects the matrix if their order, edge sets, weights, or costs change. Matrix
+construction also rejects path or intervention edges that are not validated edges in the
+supplied graph.
+
+**New things you can now do**
+
+- Build the intervention-by-path grid used by every later calculation
+- Ask which validated paths a proposed change severs, and which changes sever a path
+- Find uncoverable paths, redundant changes, and changes dominated by a cheaper alternative
+- Calculate covered path weight without counting an overlapping path twice
+- Reject stale matrices before their positions can be interpreted incorrectly
+
+**Files added or changed**
+
+- `src/lumon/coverage/matrix.py` — builds the grid, answers coverage queries, and guards
+  its positional inputs
+- `src/lumon/coverage/report.py` — summarizes coverage, uncoverable paths, and catalog noise
+- `src/lumon/coverage/__init__.py` — exports the coverage API
+- `tests/unit/test_coverage_matrix.py` — checks a hand-computed grid, stale inputs, edge
+  references, empty cases, and the generated pipeline
+
+**Gotchas worth knowing**
+
+- An uncoverable path makes full severance impossible for this catalog. Rebuilding or
+  expanding the intervention catalog is the honest next step.
+- Matrix rows and columns are positional. Reordering either source list without rebuilding
+  would change their meaning, so downstream consumers must call `verify_fingerprint`.
+- The fingerprint includes the values copied into the matrix, not only their IDs. A cost or
+  path-weight change also requires a rebuild.
+- A redundant intervention may also be dominated. The first label says it covers nothing;
+  the second says another intervention covers at least as much for no greater cost.
+
+**Not done yet**
+
+- Nothing chooses an intervention portfolio yet. Task 08 adds the reference solvers.
