@@ -551,8 +551,79 @@ or chosen from it.
 - Nothing proposes fixes yet. Task 06 synthesizes the intervention catalog — the candidate
   changes, each with the set of edges it removes and a cost carrying a label saying whether a
   human supplied that cost or we assumed it.
-- Extraction does not check graph invariants before it runs. That is deliberate and matches
-  `lumon.io.invariants`: `assert_usable` belongs at the door where a graph enters the pipeline,
-  which is the CLI in task 18, not in the middle of it.
+- Path extraction does not check graph invariants before it runs. Intervention synthesis does:
+  an unusable exploit edge could otherwise produce a catalog that cannot sever every supplied
+  route. Task 18 will also check at the CLI boundary.
 - The observed and inferred edges that extraction discards are not stored anywhere for later.
   Task 13 re-reads them from the graph when it generates bypass hypotheses.
+
+## Task 06 — Intervention model and synthesis
+_2026-09-07_
+
+**What changed in plain English**
+
+Up to now Lumon could list the attack routes Armadin supplied, but it could not describe a
+change that would break one. This task adds that missing half. An intervention is one
+customer change, such as patching a vulnerability, removing an exposed credential, or
+reducing an identity's permissions. It records every validated graph edge that change
+would remove.
+
+One intervention can remove several edges. If three kill chains all use the same
+over-permissioned identity, reducing that identity's permissions is one change that can
+break all three chains. Task 07 will turn these removal sets into the grid the optimizer
+uses to compare one shared change against many isolated fixes.
+
+Every cost now says who supplied it and why. The built-in low, medium, and high costs are
+assumptions, not measurements of a customer's environment, so synthesized interventions
+say `assumed_default`. A customer or operator can replace those assumptions through a
+JSON or YAML override without changing what the intervention removes.
+
+Synthesis uses validated edges only. It also refuses a graph when a validated exploit
+does not name the vulnerability that enabled it. Continuing would leave an attack step
+without a patch candidate and could make a later answer look complete when it was not.
+
+**New things you can now do**
+
+- Generate a deterministic catalog of customer changes from validated attack transitions
+- See exactly which validated edges each proposed change removes
+- Distinguish assumed implementation costs from operator-supplied and customer-supplied costs
+- Replace assumed costs from a JSON or YAML file
+
+**Files added or changed**
+
+- `src/lumon/model/intervention.py` — the change, removal-set, and cost-provenance models
+- `src/lumon/model/__init__.py` — exports the intervention models
+- `src/lumon/interventions/defaults.py` — the documented assumed cost tiers
+- `src/lumon/interventions/synthesize.py` — the deterministic edge-to-change rules
+- `src/lumon/interventions/overrides.py` — JSON and YAML cost override loading
+- `src/lumon/interventions/__init__.py` — exports the intervention functions and defaults
+- `src/lumon/io/invariants.py` — rejects unusable exploit and boundary references
+- `tests/unit/test_intervention_model.py` — checks models, costs, and stable serialization
+- `tests/unit/test_synthesize.py` — checks every synthesis rule and validated-only behavior
+- `tests/unit/test_overrides.py` — checks loading, replacement, and invalid overrides
+- `tests/unit/test_invariants.py` — checks the task 06 graph requirements
+- `pyproject.toml` and `uv.lock` — add typed YAML support
+- `.private/task-06-interventions.md` — records the clarified task 06 rules
+- `.private/task-13-bypass-hypotheses.md` — keeps future route substitution on the same
+  boundary-crossing rule
+- `.private/task-14-armadin-fixtures.md` — records how real transcripts must encode crossings
+
+**Gotchas worth knowing**
+
+- A boundary is crossed only when a `REACHES` edge says
+  `crosses_boundary: <boundary node id>`. Ending at a boundary is not the same thing.
+- `READS` has a narrow meaning in Lumon's graph: an execution context reads credential
+  material. Credential removal groups `READS.target` with
+  `AUTHENTICATES_AS.source`. It does not mean deleting a database that a process reads.
+- Removing credential material and rotating a credential are different actions. This task
+  models removal only.
+- Synthesized ids are stable for one catalog construction and start at `INT-000`. They
+  should be regenerated after the graph changes.
+
+**Not done yet**
+
+- Nothing selects the best interventions yet. Task 07 connects interventions to paths,
+  and tasks 08 through 11 choose portfolios and build the cost-versus-coverage frontier.
+- `SERVICE_REMOVAL` is modeled, but automatic synthesis does not propose removing a service.
+- Lumon records whether side effects were declared, but it cannot discover which
+  legitimate workloads a change might break.

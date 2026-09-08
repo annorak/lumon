@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2",
+    "PyYAML>=6",
     "networkx",
     "numpy",
     "ortools",
@@ -20,6 +21,7 @@ dev = [
     "hypothesis",
     "ruff",
     "mypy",
+    "types-PyYAML",
 ]
 
 [build-system]

@@ -4,9 +4,10 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from lumon.model import AttackGraph, Node, NodeType
+from lumon.model import AttackGraph, Edge, EdgeType, Evidence, Node, NodeType
 
 ENABLER_TYPES = frozenset({NodeType.VULNERABILITY, NodeType.CREDENTIAL})
+CROSSES_BOUNDARY_ATTRIBUTE = "crosses_boundary"
 
 
 class Severity(StrEnum):
@@ -54,6 +55,7 @@ def check_invariants(graph: AttackGraph) -> InvariantReport:
             *_check_graph_completeness(graph),
             *_check_edge_endpoints(graph),
             *_check_edge_enablers(graph),
+            *_check_boundary_crossings(graph),
             *_check_node_connectivity(graph),
         ]
     )
@@ -119,31 +121,81 @@ def _check_edge_endpoints(graph: AttackGraph) -> list[Violation]:
 
 def _check_edge_enablers(graph: AttackGraph) -> list[Violation]:
     node_types = {node.id: node.type for node in graph.nodes}
-    violations: list[Violation] = []
-    for edge in graph.edges:
-        if edge.enabled_by is None:
-            continue
-        enabler_type = node_types.get(edge.enabled_by)
-        if enabler_type is None:
-            violations.append(
-                _edge_error(
-                    "DANGLING_ENABLED_BY", edge.id, f"is enabled by {edge.enabled_by!r}, not a node"
-                )
+    return [
+        violation
+        for edge in graph.edges
+        if (violation := _check_edge_enabler(edge, node_types)) is not None
+    ]
+
+
+def _check_edge_enabler(edge: Edge, node_types: dict[str, NodeType]) -> Violation | None:
+    if edge.enabled_by is None:
+        if _is_validated_exploit(edge):
+            return _edge_error(
+                "EXPLOITS_WITHOUT_ENABLED_BY", edge.id, "has no enabled_by vulnerability"
             )
-        elif enabler_type not in ENABLER_TYPES:
-            violations.append(
-                Violation(
-                    code="ENABLED_BY_WRONG_TYPE",
-                    severity=Severity.WARNING,
-                    message=(
-                        f"edge {edge.id!r} is enabled by {edge.enabled_by!r}, which is a "
-                        f"{enabler_type} node; only a vulnerability or a credential enables "
-                        "a transition"
-                    ),
-                    subject_id=edge.id,
-                )
-            )
-    return violations
+        return None
+
+    enabler_type = node_types.get(edge.enabled_by)
+    if enabler_type is None:
+        return _edge_error(
+            "DANGLING_ENABLED_BY", edge.id, f"is enabled by {edge.enabled_by!r}, not a node"
+        )
+    if _is_validated_exploit(edge) and enabler_type is not NodeType.VULNERABILITY:
+        return _edge_error(
+            "EXPLOITS_ENABLED_BY_NON_VULNERABILITY",
+            edge.id,
+            f"is a validated exploit enabled by {edge.enabled_by!r}, a {enabler_type} node",
+        )
+    if enabler_type in ENABLER_TYPES:
+        return None
+    return Violation(
+        code="ENABLED_BY_WRONG_TYPE",
+        severity=Severity.WARNING,
+        message=(
+            f"edge {edge.id!r} is enabled by {edge.enabled_by!r}, which is a "
+            f"{enabler_type} node; only a vulnerability or a credential enables a transition"
+        ),
+        subject_id=edge.id,
+    )
+
+
+def _is_validated_exploit(edge: Edge) -> bool:
+    return edge.evidence is Evidence.VALIDATED and edge.type is EdgeType.EXPLOITS
+
+
+def _check_boundary_crossings(graph: AttackGraph) -> list[Violation]:
+    node_types = {node.id: node.type for node in graph.nodes}
+    return [
+        violation
+        for edge in graph.validated_edges()
+        if edge.type is EdgeType.REACHES
+        if (violation := _check_boundary_crossing(edge, node_types)) is not None
+    ]
+
+
+def _check_boundary_crossing(edge: Edge, node_types: dict[str, NodeType]) -> Violation | None:
+    boundary_id = edge.attributes.get(CROSSES_BOUNDARY_ATTRIBUTE)
+    if boundary_id is None:
+        return None
+    boundary_type = node_types.get(boundary_id)
+    if boundary_type is None:
+        return _edge_error(
+            "DANGLING_CROSSES_BOUNDARY",
+            edge.id,
+            f"crosses boundary {boundary_id!r}, not a node",
+        )
+    if boundary_type is NodeType.BOUNDARY:
+        return None
+    return Violation(
+        code="CROSSES_BOUNDARY_WRONG_TYPE",
+        severity=Severity.WARNING,
+        message=(
+            f"edge {edge.id!r} says it crosses {boundary_id!r}, which is a "
+            f"{boundary_type} node; crosses_boundary must name a boundary node"
+        ),
+        subject_id=edge.id,
+    )
 
 
 def _check_node_connectivity(graph: AttackGraph) -> list[Violation]:
@@ -152,6 +204,11 @@ def _check_node_connectivity(graph: AttackGraph) -> list[Violation]:
         for edge in graph.edges
         for node_id in (edge.source, edge.target, edge.enabled_by)
         if node_id is not None
+    } | {
+        boundary_id
+        for edge in graph.edges
+        if edge.type is EdgeType.REACHES
+        if (boundary_id := edge.attributes.get(CROSSES_BOUNDARY_ATTRIBUTE)) is not None
     }
     validated_sources = {edge.source for edge in graph.validated_edges()}
     validated_targets = {edge.target for edge in graph.validated_edges()}
