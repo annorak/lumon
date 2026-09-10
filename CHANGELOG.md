@@ -682,3 +682,177 @@ supplied graph.
 **Not done yet**
 
 - Nothing chooses an intervention portfolio yet. Task 08 adds the reference solvers.
+
+## Task 08 — Reference solvers
+_2026-09-09_
+
+**What changed in plain English**
+
+Lumon can now choose sets of proposed changes in two ways. The brute-force solver tries
+every possible set and returns the best one. The greedy solver makes one quick choice at
+a time and exists as the fallback for inputs too large for exact solving.
+
+Brute force is deliberately slow. It is the answer key that Task 10 will use to check the
+fast production solver on small examples. Without an independent answer key, two solvers
+could share the same bug and agree with each other for the wrong reason.
+
+The easy trap is assuming that the best answer contains the fewest changes. Three LOW-cost
+changes cost `3`, so they are cheaper than one HIGH-cost change costing `9`. Brute force
+therefore checks every set instead of stopping when it finds the first full cover.
+
+Each result says whether it is exact, approximate, or not proven either way. The original
+task overstated the budgeted greedy guarantee. The simple fallback covers at least half of
+the stronger `1 - 1/e` bound, not the full bound, so its reported ratio now says exactly
+that. Full-cover greedy counts newly broken paths rather than their weights because every
+path must be broken in that formulation.
+
+**New things you can now do**
+
+- Find the exact cheapest set of changes for instances with at most 20 interventions
+- Find the exact maximum path weight that can be severed within a budget on those instances
+- Get a fast deterministic fallback with an explicit approximation guarantee
+- Trace every solution back to the coverage matrix that produced it
+
+**Files added or changed**
+
+- `src/lumon/solve/solution.py` — records a portfolio, its coverage, and what the solver can prove
+- `src/lumon/solve/brute_force.py` — exhaustively checks every small portfolio
+- `src/lumon/solve/greedy.py` — provides the deterministic large-instance fallback
+- `src/lumon/solve/__init__.py` — exports the solver API
+- `tests/unit/test_solution_model.py` — checks guarantee and ratio validation
+- `tests/unit/test_brute_force.py` — proves the answer key against hand-computed cases
+- `tests/unit/test_greedy.py` — checks bounds, budgets, tie-breaking, and both corrected regressions
+- `.private/00-design-doc.md` — corrects the general-cost budgeted coverage guarantee
+- `.private/02-PROJECT-CONTEXT.md` — keeps the permanent solver summary mathematically honest
+- `.private/task-08-reference-solvers.md` — records the clarified Task 08 contract
+
+**Gotchas worth knowing**
+
+- Brute force refuses more than 20 interventions. It raises instead of silently switching solvers.
+- Full-cover greedy ignores path weight because all validated paths must be severed.
+- Budgeted greedy does use path weight because its job is to maximize severed weight under a limit.
+- Callers remain responsible for checking that a matrix matches its original inputs before solving.
+
+**Not done yet**
+
+- Task 09 adds the production CP-SAT solver and dispatches large inputs to greedy.
+- Task 10 checks the exact solver against brute force across generated examples.
+
+## Task 08 — Production solver plan simplified
+_2026-09-10_
+
+**What changed in plain English**
+
+The production plan now uses one solver, CP-SAT, for every request. A solver chooses which
+environment changes to make. The earlier plan switched to a simpler greedy algorithm for
+large inputs. Removing that switch gives us fewer algorithms and configuration choices to
+maintain.
+
+Every solve will have a time limit. If CP-SAT proves the answer is best, the result says
+`EXACT`. If it finds a valid answer but runs out of time before proving that, the result
+says `UNKNOWN` and explains the limit. If it finds no answer, the call raises an error.
+A valid but unproven answer must never be presented as the cheapest or best possible one.
+
+Brute force stays as an independent answer key in shared test code. Task 10 will compare
+CP-SAT with that answer key for both questions: the cheapest way to sever every validated
+path, and the most path weight that can be severed within a budget. The revised plan
+removes greedy entirely, including its tests and approximation fields.
+
+This entry records a documentation change. The original Task 08 Python code is still
+present. Task 09 now explicitly owns moving brute force into tests, deleting greedy,
+simplifying the result model, and implementing CP-SAT. The original Task 08 changelog
+entry remains above as a record of what was built at that time.
+
+**New things you can now do**
+
+- Follow one consistent production solver plan across the project and upcoming tasks
+- Distinguish a proven optimum, a feasible unproven result, and a failure to find a result
+- Review the required comparisons for both formulations against one shared test answer key
+
+**Files added or changed**
+
+- `README.md` — current library status and the planned production behavior
+- `.private/00-design-doc.md` — solver policy, test role, and limits on optimality claims
+- `.private/01-architecture.html` — replaces the obsolete solver note
+- `.private/02-PROJECT-CONTEXT.md` — the production contract and revised code ownership
+- `.private/03-TASK-INDEX.md` — revised task names and the Task 09 migration responsibility
+- `.private/task-08-reference-solvers.md` — shared result model and test answer-key contract
+- `.private/task-09-ilp-solver.md` — code migration, CP-SAT calls, time limits, and status tests
+- `.private/task-10-property-verification.md` — direct oracle comparisons for both formulations
+- `.private/task-18-cli.md` — time-limit option, proof-status output, and solver error handling
+- `CHANGELOG.md` — this entry, preserving the earlier implementation history
+
+**Gotchas worth knowing**
+
+- A time limit can expire after finding a valid answer; that does not prove the answer is bad
+  or best. `UNKNOWN` means we have not proved optimality.
+- CP-SAT's `UNKNOWN` status means no usable solution was found. Lumon's `UNKNOWN`
+  guarantee describes a usable answer returned from CP-SAT's `FEASIBLE` status.
+- Tests comparing optimal values must require `EXACT` before making that comparison.
+- The planning files under `.private/` are ignored by Git and remain local.
+
+**Not done yet**
+
+- Task 09 must carry out the Python migration and implement the production solver.
+- Task 10 must implement the revised generated checks after that migration.
+
+## Task 08 — Test-only reference solver and simpler results
+
+_2026-09-10_
+
+**What changed in plain English**
+
+The Task 08 code now follows the simpler solver plan. Brute force moved into shared test
+code, and the greedy solver and its tests were deleted. Production keeps the common
+result type, which records the chosen changes, their cost, the validated paths they sever,
+and whether the answer is proven best.
+
+Results now support only `EXACT` and `UNKNOWN`. The approximation-ratio field and its
+validation are gone. `UNKNOWN` still means a valid answer without a proof that it is best.
+Task 09 will add the CP-SAT solver that produces production answers.
+
+The slow brute-force solver remains the independent answer key for both optimization
+questions. It checks every set of changes because three cheap changes can cost less than
+one expensive change. Tests also check that a tight budget favors greater total path
+weight, overlapping fixes count each path once, and empty inputs have explicit results.
+
+This completes the code cleanup previously assigned to Task 09. The task documents now
+leave Task 09 with CP-SAT implementation and Task 10 with generated comparisons against
+the shared answer key. Earlier changelog entries remain unchanged as history.
+
+**New things you can now do**
+
+- Import the same exact answer key from `tests.brute_force` in unit and property tests
+- Serialize either supported guarantee and reject obsolete approximation fields
+- Check weighted budget choices, empty inputs, overlapping coverage, and fingerprint notes
+
+**Files added or changed**
+
+- `tests/brute_force.py` — moved from production, with its 20-intervention cap
+- `src/lumon/solve/greedy.py` — deleted
+- `tests/unit/test_greedy.py` — deleted with the solver it tested
+- `src/lumon/solve/solution.py` — removes approximation metadata and keeps shared result construction
+- `src/lumon/solve/__init__.py` — exports only the shared result types and infeasibility error
+- `tests/unit/test_brute_force.py` — uses the test reference and checks the remaining edge cases
+- `tests/unit/test_solution_model.py` — checks both guarantees, validation, and serialization
+- `README.md` — distinguishes the current library from the planned production solver
+- `.private/00-design-doc.md`, `.private/02-PROJECT-CONTEXT.md`, and
+  `.private/03-TASK-INDEX.md` — remove the deferred Task 09 migration
+- `.private/task-08-reference-solvers.md` — assigns the simplified code and tests to Task 08
+- `.private/task-09-ilp-solver.md` — keeps the production solver work without repeating this cleanup
+- `.private/task-10-property-verification.md` — names the completed Task 08 prerequisites
+- `.private/task-18-cli.md` — removes the obsolete solver-mode option test
+- `CHANGELOG.md` — records the implementation change without rewriting earlier entries
+
+**Gotchas worth knowing**
+
+- Reference solvers are no longer available from `lumon.solve`. Only tests import them.
+- There is no production solver until Task 09. This change does not implement CP-SAT.
+- Brute force still rejects more than 20 interventions and never switches algorithms.
+- Existing serialized results containing approximation metadata now fail validation.
+- The planning files under `.private/` are ignored by Git and remain local.
+
+**Not done yet**
+
+- Task 09 implements CP-SAT, its time limit, and its result-status handling.
+- Task 10 checks both production formulations against brute force across generated inputs.

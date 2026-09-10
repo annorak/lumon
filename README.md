@@ -42,14 +42,14 @@ to find changes like that.
       <td>Validated paths within the configured limits</td>
     </tr>
     <tr>
-      <td>3. Build interventions, planned</td>
+      <td>3. Build interventions</td>
       <td>Possible changes such as patching a bug or reducing permissions</td>
       <td>The paths each change would break</td>
     </tr>
     <tr>
       <td>4. Solve, planned</td>
       <td>Interventions, costs, and path weights</td>
-      <td>The best set of changes for each budget</td>
+      <td>Production CP-SAT results planned in Task 09</td>
     </tr>
     <tr>
       <td>5. Review, planned</td>
@@ -59,8 +59,9 @@ to find changes like that.
   </tbody>
 </table>
 
-The current library stops after path extraction and summary. Steps 1 through 3 will turn the
-graph and proposed changes into a coverage table. The solver will work from that table.
+The current library can extract paths, propose changes, build the coverage table, and
+represent solver results. Task 08 provides a brute-force answer key in shared test code.
+Task 09 adds CP-SAT as the only production solver.
 
 ## The graph
 
@@ -128,7 +129,7 @@ A path is an ordered list of edges from an entry point to an objective. Two path
 same nodes but use different edges. That matters because a change may block one attacker
 technique without blocking the other.
 
-An intervention will represent one change to the environment. It will have:
+An intervention represents one change to the environment. It records:
 
 - a name
 - the edge IDs it removes
@@ -138,6 +139,18 @@ An intervention will represent one change to the environment. It will have:
 One intervention may remove several edges. That is why Lumon cannot use a normal minimum-cut
 algorithm where every edge has its own independent price. Full severance is a weighted set-cover
 problem. Choosing the best coverage under a fixed budget is a maximum-coverage problem.
+
+## Production solver plan
+
+Task 09 will use CP-SAT for every production solve, with a default time limit of 30 seconds.
+A result is labeled `EXACT` only when the solver proves it is optimal. If the time limit
+expires with a feasible answer, Lumon returns it as `UNKNOWN`, meaning optimality is
+unproven. If no answer was found, Lumon raises a solver error.
+
+There will be one production solver, with no size-based selection or alternate solver
+mode. Brute force lives under `tests/` to check CP-SAT on small examples. Task 10 will
+generate many such examples and check coverage, costs, budgets, and optimality.
+The production CP-SAT implementation is planned for Task 09.
 
 ## Install
 
