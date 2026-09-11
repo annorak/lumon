@@ -856,3 +856,68 @@ the shared answer key. Earlier changelog entries remain unchanged as history.
 
 - Task 09 implements CP-SAT, its time limit, and its result-status handling.
 - Task 10 checks both production formulations against brute force across generated inputs.
+
+## Task 09 — CP-SAT production solver
+
+_2026-09-10_
+
+**What changed in plain English**
+
+Lumon can now choose environment changes with one production solver, CP-SAT. It answers
+two questions: what is the cheapest set of changes that severs every validated attack
+path, and which changes sever the greatest total path weight within a budget. Keeping
+one solver makes the implementation simpler to maintain and gives later tasks one API.
+
+Every solve has a time limit, defaulting to 30 seconds. A result marked `EXACT` means the
+solver proved that its answer is best. A feasible answer at the time limit can still be
+useful, but it is marked `UNKNOWN` because it is not proven best. If no answer has been
+found, the call raises an error. If a validated path has no proposed fix, a request to
+sever every path fails before solving and names the paths that cannot be severed.
+
+Both optimization problems are NP-hard, so finding the best answer can become expensive
+as inputs grow. We expect exact solving to be practical for tens of validated paths and
+around 100 proposed changes. The performance test runs the existing realistic preset
+through graph generation, path extraction, fix synthesis, and both solves in under one
+second. That preset is one measured example, not a runtime promise for every environment.
+
+The solver converts costs and optimization weights into integer thousandths. Values with
+finer decimal precision are rejected instead of silently rounded. Budgets are never rounded
+upward. Reported totals come from the original path and cost data, and a result that would
+exceed the supplied budget raises an error. Tests compare both solver answers with an
+independent answer key that tries every possible set of changes on small examples.
+
+**New things you can now do**
+
+- Find a proven cheapest portfolio that severs every validated attack path when feasible
+- Find a proven maximum-weight portfolio within a supplied budget
+- Set a finite time limit and distinguish a proven optimum from a feasible unproven answer
+- Import both solver functions and `SolverError` directly from `lumon.solve`
+
+**Files added or changed**
+
+- `src/lumon/solve/ilp.py`: both formulations, numeric validation, time limits, and status handling
+- `src/lumon/solve/__init__.py`: direct exports for the production functions and solver error
+- `tests/unit/test_ilp.py`: independent answer comparisons, numeric boundaries, and all solver statuses
+- `tests/unit/test_ilp_performance.py`: the realistic preset through the pipeline and both solves
+- `CHANGELOG.md`: this entry
+
+**Gotchas worth knowing**
+
+- `EXACT` describes only the supplied validated paths and accepted numeric precision.
+- CP-SAT's `UNKNOWN` status means no solution was found and raises `SolverError`. Lumon's
+  `UNKNOWN` guarantee instead describes a usable answer from CP-SAT's `FEASIBLE` status.
+- Callers must check the stored fingerprint against the original path set and intervention
+  catalog before solving when those inputs may have changed. Results retain that fingerprint.
+- Completed searches use one worker and a fixed seed. Time-limited unproven selections may
+  differ between runs because the cutoff depends on elapsed wall-clock time.
+- Decimal thousandths can still have small differences in their stored floating-point totals.
+  The budget check permits no overspend tolerance. Current cost tiers 1, 3, and 9 avoid this issue.
+- Tests comparing optimal totals allow an absolute difference of `1e-12`, one trillionth,
+  with no relative tolerance. This handles stored values such as `0.1 + 0.2` differing
+  slightly from `0.3`; it does not relax input precision or budget checks.
+- CP-SAT can choose a different portfolio from brute force when the optimal objective ties.
+
+**Not done yet**
+
+- Task 10 adds broader generated property checks against the independent answer key.
+- Task 11 sweeps budgets to produce the Pareto frontier.
