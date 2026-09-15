@@ -24,3 +24,6 @@ jobs:
 
       - name: Lint, typecheck, test
         run: make check
+
+      - name: Run live demo
+        run: uv run --frozen python demo/run_demo.py

@@ -1,0 +1,94 @@
+{
+  "graph_id": "armadin-kcc-episode2-auction",
+  "source": {
+    "publication": "Armadin, Kill Chains and Coffee, episode 2",
+    "url": "https://www.youtube.com/watch?v=KPLQmX_dqNM",
+    "excerpts_file": "episode2-excerpts.txt"
+  },
+  "evidence": [
+    {
+      "id": "source-disclosure",
+      "location": "Supplied episode2.txt, line 1, UTF-8 byte offset 100",
+      "quotation": "It was an auction website. We found the cloud.md file that we think the developers in cloud code used to have AI help write the website. This static file was exposed. Our attacker was able to read it and it leaked sensitive information like the architecture of the application, the API requests and the components. One thing the cloud.md file referenced was a web socket service used for bid submission.",
+      "node_ids": [
+        "n_bid_websocket"
+      ],
+      "edge_ids": []
+    },
+    {
+      "id": "authentication-bypass",
+      "location": "Supplied episode2.txt, line 1, UTF-8 byte offset 567",
+      "quotation": "All right, like you can't submit a bid unless you have a user account and we didn't have a user account. There was an authentication check in front of the web socket, but it had a bug. It basically used an and instead of an or and therefore there was not really an authentication check in front of the web socket.",
+      "node_ids": [
+        "n_internet",
+        "n_authentication_bug",
+        "n_bid_websocket"
+      ],
+      "edge_ids": [
+        "e_authentication_bypass"
+      ]
+    },
+    {
+      "id": "account-creation",
+      "location": "Supplied episode2.txt, line 1, UTF-8 byte offset 881",
+      "quotation": "Second thing we saw was that there was a bid type field. In this case the bid type is passed directly into SQL. And so we did what I think of as pretty standard SQL injection. We submitted a bid type that included a quote to close the string, a semicolon and to move to the next line and it turns out in this case the MySQL server was misconfigured. And so when we wrote another line of SQL, it was interpreted by the MySQL database, it just ran it. And in this case that second line of SQL inserted a new Arbutus super user into the backing database. We made ourselves a user account with maximum possible permissions.",
+      "node_ids": [
+        "n_sql_injection"
+      ],
+      "edge_ids": [
+        "e_sql_to_host_execution"
+      ]
+    },
+    {
+      "id": "plugin-execution",
+      "location": "Supplied episode2.txt, line 1, UTF-8 byte offset 1501",
+      "quotation": "And from there, a pretty straightforward path. I mean we logged in. All right, we logged in and now we can get to super admin user pages. We went to a Joomla administration panel here. We're able to prepare and upload a malicious plugin that ran shell_exec within a PHP file to get remote code execution and demonstrate that we could in fact get the server to run arbitrary code that we specified.",
+      "node_ids": [
+        "n_server_rce"
+      ],
+      "edge_ids": [
+        "e_sql_to_host_execution"
+      ]
+    }
+  ],
+  "validated_paths": [
+    {
+      "edge_ids": [
+        "e_authentication_bypass",
+        "e_sql_to_host_execution"
+      ],
+      "evidence_ids": [
+        "source-disclosure",
+        "authentication-bypass",
+        "account-creation",
+        "plugin-execution"
+      ]
+    }
+  ],
+  "findings": {
+    "count": null,
+    "description": "No total finding count reported in the supplied source",
+    "evidence_ids": []
+  },
+  "customer_remediation": {
+    "reported_outcome": null,
+    "evidence_ids": [],
+    "details_status": "not_reported"
+  },
+  "assumptions": [
+    "Objective weight 5 represents assumed importance for server code execution; it is not customer supplied.",
+    "Both patch candidates use the existing assumed cost of 1 implementation unit, not measured customer effort.",
+    "Fixing the WebSocket authentication bug is modeled as removing e_authentication_bypass.",
+    "Fixing the SQL injection is modeled as removing e_sql_to_host_execution by blocking the account-creation step. Legitimate workload effects of both fixes are untested."
+  ],
+  "omissions": [
+    "The final exploit edge abbreviates SQL injection creating a privileged account, login, Joomla plugin upload, and PHP execution. The source does not report direct database-to-operating-system execution.",
+    "CLAUDE.md disclosure remains supporting reconnaissance outside the severable path. Quotations preserve the supplied transcript's cloud.md spelling.",
+    "The attacker-created account is not a separately removable credential or permission target. Changing that account alone does not establish durable severance of a route that created it through SQL injection.",
+    "No separate Joomla vulnerability or patch candidate is established.",
+    "The catalog contains only the two reported vulnerability fixes. Separate ingress restrictions, database-permission changes, and plugin-execution policy are not modeled.",
+    "No specific MySQL configuration setting, account identifier, database role, or operating-system execution identity is inferred.",
+    "No production-data objective, total finding count, or specific customer remediation actions are established.",
+    "No observed or inferred substitute transitions are supplied."
+  ]
+}

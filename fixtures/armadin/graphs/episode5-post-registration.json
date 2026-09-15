@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    { "id": "n_authenticated_app_access", "type": "entry_point", "label": "Reported authenticated application access after registration and token issuance" },
+    { "id": "n_sql_injection", "type": "vulnerability", "label": "One unnamed reported SQL injection in an authenticated endpoint" },
+    {
+      "id": "n_sql_query_execution",
+      "type": "objective",
+      "label": "Reported SQL-query execution through the application",
+      "weight": 5.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_sql_injection",
+      "source": "n_authenticated_app_access",
+      "target": "n_sql_query_execution",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_sql_injection"
+    }
+  ],
+  "metadata": {
+    "graph_id": "armadin-kcc-episode5-post-registration",
+    "source_url": "https://www.youtube.com/watch?v=LXzHIG4CqnA",
+    "evidence_scope": "One source-reported partial route from authenticated application access to SQL-query execution; not all three reported injections or an Internet-to-data route. Not independently reproduced by Lumon.",
+    "objective_weight_provenance": "Assumed weight 5 for SQL-query execution; downstream telecom-data access is not a modeled objective."
+  }
+}

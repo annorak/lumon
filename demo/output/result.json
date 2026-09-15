@@ -1,0 +1,296 @@
+{
+  "bypass_queue": {
+    "hypotheses": [],
+    "matrix_fingerprint": "8779e43738511e00ba17a9bf13c0c8875951babd0b3af126d05682efc8b7f855",
+    "max_hypotheses": 20,
+    "selected_intervention_ids": [
+      "INT-003"
+    ],
+    "truncated": false
+  },
+  "counts": {
+    "K_source_reported_findings": 12,
+    "M_selected_changes": 1,
+    "N_validated_paths": 1
+  },
+  "customer": {
+    "bypass_queue": null,
+    "change_count": null,
+    "covered_path_count": null,
+    "covered_path_ids": null,
+    "covered_weight": null,
+    "is_full_cover": null,
+    "permission_bindings": null,
+    "remaining_credential_authentication_ids": null,
+    "remaining_credential_read_ids": null,
+    "remaining_transition_ids": null,
+    "removed_transition_ids": null,
+    "selected_intervention_ids": null,
+    "total_cost": null,
+    "uncovered_path_count": null,
+    "uncovered_path_ids": null
+  },
+  "extraction_limits": {
+    "max_depth": 12,
+    "max_paths": 5000
+  },
+  "graph": {
+    "edges": [
+      {
+        "attributes": {},
+        "enabled_by": null,
+        "evidence": "validated",
+        "id": "e_public_reach",
+        "source": "n_internet",
+        "target": "n_public_endpoint",
+        "type": "reaches"
+      },
+      {
+        "attributes": {},
+        "enabled_by": "n_ssrf",
+        "evidence": "validated",
+        "id": "e_ssrf",
+        "source": "n_public_endpoint",
+        "target": "n_internal_service",
+        "type": "exploits"
+      },
+      {
+        "attributes": {},
+        "enabled_by": "n_published_cve",
+        "evidence": "validated",
+        "id": "e_cve_execution",
+        "source": "n_internal_service",
+        "target": "n_execution_identity",
+        "type": "exploits"
+      },
+      {
+        "attributes": {},
+        "enabled_by": null,
+        "evidence": "validated",
+        "id": "e_credential_read",
+        "source": "n_execution_identity",
+        "target": "n_credential_material",
+        "type": "reads"
+      },
+      {
+        "attributes": {},
+        "enabled_by": null,
+        "evidence": "validated",
+        "id": "e_cloud_authentication",
+        "source": "n_credential_material",
+        "target": "n_cloud_compromise",
+        "type": "authenticates_as"
+      }
+    ],
+    "metadata": {
+      "evidence_scope": "One narrated route reported as exercised by Armadin; not independently reproduced by Lumon.",
+      "graph_id": "armadin-kcc-episode4-fortune600",
+      "objective_weight_provenance": "Assumed importance for full cloud compromise; not customer supplied.",
+      "source_url": "https://www.youtube.com/watch?v=RxLj-4BsYhg"
+    },
+    "nodes": [
+      {
+        "attributes": {},
+        "id": "n_internet",
+        "label": "Unauthenticated internet access",
+        "type": "entry_point",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_public_endpoint",
+        "label": "Public endpoint in the narrated route",
+        "type": "service",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_ssrf",
+        "label": "Server-side request forgery",
+        "type": "vulnerability",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_internal_service",
+        "label": "Internal Kubernetes service",
+        "type": "service",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_published_cve",
+        "label": "Published CVE, identifier not reported",
+        "type": "vulnerability",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_execution_identity",
+        "label": "Unnamed Kubernetes execution identity",
+        "type": "identity",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_credential_material",
+        "label": "Obtained third-party credential material",
+        "type": "credential",
+        "weight": null
+      },
+      {
+        "attributes": {},
+        "id": "n_cloud_compromise",
+        "label": "Reported full cloud infrastructure compromise",
+        "type": "objective",
+        "weight": 10.0
+      }
+    ]
+  },
+  "headline": "For the Fortune 600 chain reported in Armadin, Kill Chains and Coffee, episode 4, Lumon selects 1 modeled change at minimum cost to sever the 1 supplied source-validated path under the stated cost assumptions; the podcast separately reports 12 remote-code-execution findings.",
+  "matrix_fingerprint": "8779e43738511e00ba17a9bf13c0c8875951babd0b3af126d05682efc8b7f855",
+  "paths": {
+    "graph_id": "armadin-kcc-episode4-fortune600",
+    "paths": [
+      {
+        "edge_ids": [
+          "e_public_reach",
+          "e_ssrf",
+          "e_cve_execution",
+          "e_credential_read",
+          "e_cloud_authentication"
+        ],
+        "entry_id": "n_internet",
+        "id": "p0000",
+        "node_ids": [
+          "n_internet",
+          "n_public_endpoint",
+          "n_internal_service",
+          "n_execution_identity",
+          "n_credential_material",
+          "n_cloud_compromise"
+        ],
+        "objective_id": "n_cloud_compromise",
+        "weight": 10.0
+      }
+    ],
+    "truncated": false,
+    "truncation_reason": null
+  },
+  "permission_bindings": "not_separately_modeled",
+  "provenance": {
+    "assumptions": [
+      "Objective weight 10 represents assumed importance for reported full cloud compromise; it is not customer supplied.",
+      "Candidate costs use the existing assumed implementation-cost tiers, not measured customer effort.",
+      "Removing the credential material used by this route is one modeled change, regardless of the unknown number of underlying secrets.",
+      "Endpoint access control and the two patches are modeled as removing their corresponding transitions; legitimate workload effects are untested."
+    ],
+    "customer_remediation": {
+      "details_status": "not_reported",
+      "evidence_ids": [
+        "remediation"
+      ],
+      "reported_outcome": "The podcast reports that all 12 RCE findings were remediated."
+    },
+    "findings": {
+      "count": 12,
+      "description": "Source-reported unauthenticated RCE findings",
+      "evidence_ids": [
+        "public-entry"
+      ]
+    },
+    "graph_id": "armadin-kcc-episode4-fortune600",
+    "omissions": [
+      "This is one narrated route, not 12 individually mapped end-to-end paths.",
+      "The execution identity is an unnamed representation of the reported Kubernetes execution context, not a named service account.",
+      "Kubernetes permission bindings and the credential store are not separately modeled; no Kubernetes permission-reduction candidate is supported.",
+      "No process escape or boundary crossing is inferred from credential exfiltration and external reuse.",
+      "The CVE identifier is not supplied and its reported year is uncertain.",
+      "Exfiltration transport and a separate database objective are not represented.",
+      "No observed or inferred substitute transitions are supplied; an empty generated queue cannot establish absence of bypasses.",
+      "Customer change count, cost, removal effects, modeled coverage, remaining access, and bypass queue are unavailable."
+    ],
+    "source": {
+      "excerpts_file": "episode4-excerpts.txt",
+      "publication": "Armadin, Kill Chains and Coffee, episode 4",
+      "url": "https://www.youtube.com/watch?v=RxLj-4BsYhg"
+    },
+    "validated_paths": [
+      {
+        "edge_ids": [
+          "e_public_reach",
+          "e_ssrf",
+          "e_cve_execution",
+          "e_credential_read",
+          "e_cloud_authentication"
+        ],
+        "evidence_ids": [
+          "case",
+          "public-entry",
+          "exploitation",
+          "internal-service",
+          "credential-read",
+          "cloud-authentication"
+        ]
+      }
+    ]
+  },
+  "provenance_file": "fixtures/armadin/provenance/episode4-fortune600.json",
+  "ranked_interventions": [
+    {
+      "cost_units": 1.0,
+      "covered_path_ids": [
+        "p0000"
+      ],
+      "covered_weight": 10.0,
+      "intervention": {
+        "cost": {
+          "justification": "usually a version bump and a deploy",
+          "source": "assumed_default",
+          "tier": "low"
+        },
+        "id": "INT-003",
+        "intervention_class": "vulnerability_patch",
+        "name": "Patch vulnerability n_ssrf",
+        "notes": null,
+        "removes_edge_ids": [
+          "e_ssrf"
+        ],
+        "side_effects_declared": false,
+        "target_node_id": "n_ssrf"
+      },
+      "rank": 1
+    }
+  ],
+  "remaining_credential_authentication_ids": [
+    "e_cloud_authentication"
+  ],
+  "remaining_credential_read_ids": [
+    "e_credential_read"
+  ],
+  "remaining_transition_ids": [
+    "e_cloud_authentication",
+    "e_credential_read",
+    "e_cve_execution",
+    "e_public_reach"
+  ],
+  "removed_transition_ids": [
+    "e_ssrf"
+  ],
+  "repository_url": "https://github.com/annorak/lumon",
+  "solution": {
+    "covered_path_ids": [
+      "p0000"
+    ],
+    "covered_weight": 10.0,
+    "guarantee": "exact",
+    "is_full_cover": true,
+    "notes": "matrix_fingerprint=8779e43738511e00ba17a9bf13c0c8875951babd0b3af126d05682efc8b7f855",
+    "selected_intervention_ids": [
+      "INT-003"
+    ],
+    "solver_name": "cp_sat",
+    "total_cost": 1.0,
+    "uncovered_path_ids": []
+  }
+}

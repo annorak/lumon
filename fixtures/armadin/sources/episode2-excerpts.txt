@@ -1,0 +1,19 @@
+Kill Chains and Coffee, episode 2
+Publisher: Armadin
+Public source: https://www.youtube.com/watch?v=KPLQmX_dqNM
+
+Selected excerpts from the supplied transcript.
+Transcript spelling and speech markers are preserved. Byte offsets are zero-based
+and refer to the supplied original transcript, not this excerpt file.
+
+[source-disclosure] Supplied episode2.txt, line 1, UTF-8 byte offset 100
+It was an auction website. We found the cloud.md file that we think the developers in cloud code used to have AI help write the website. This static file was exposed. Our attacker was able to read it and it leaked sensitive information like the architecture of the application, the API requests and the components. One thing the cloud.md file referenced was a web socket service used for bid submission.
+
+[authentication-bypass] Supplied episode2.txt, line 1, UTF-8 byte offset 567
+All right, like you can't submit a bid unless you have a user account and we didn't have a user account. There was an authentication check in front of the web socket, but it had a bug. It basically used an and instead of an or and therefore there was not really an authentication check in front of the web socket.
+
+[account-creation] Supplied episode2.txt, line 1, UTF-8 byte offset 881
+Second thing we saw was that there was a bid type field. In this case the bid type is passed directly into SQL. And so we did what I think of as pretty standard SQL injection. We submitted a bid type that included a quote to close the string, a semicolon and to move to the next line and it turns out in this case the MySQL server was misconfigured. And so when we wrote another line of SQL, it was interpreted by the MySQL database, it just ran it. And in this case that second line of SQL inserted a new Arbutus super user into the backing database. We made ourselves a user account with maximum possible permissions.
+
+[plugin-execution] Supplied episode2.txt, line 1, UTF-8 byte offset 1501
+And from there, a pretty straightforward path. I mean we logged in. All right, we logged in and now we can get to super admin user pages. We went to a Joomla administration panel here. We're able to prepare and upload a malicious plugin that ran shell_exec within a PHP file to get remote code execution and demonstrate that we could in fact get the server to run arbitrary code that we specified.

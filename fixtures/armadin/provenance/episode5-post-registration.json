@@ -1,0 +1,124 @@
+{
+  "graph_id": "armadin-kcc-episode5-post-registration",
+  "source": {
+    "publication": "Armadin, Kill Chains and Coffee, episode 5",
+    "url": "https://www.youtube.com/watch?v=LXzHIG4CqnA",
+    "excerpts_file": "episode5-excerpts.txt"
+  },
+  "evidence": [
+    {
+      "id": "starting-access",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 2862",
+      "quotation": "Then the agents then took their new account that they created and produced uh an additional token that could be used to then start attacking the authenticated portion of the web app.",
+      "node_ids": [
+        "n_authenticated_app_access"
+      ],
+      "edge_ids": []
+    },
+    {
+      "id": "sql-injection",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 3150",
+      "quotation": "Um, from there the agent identified uh three separate endpoints and was able to produce working SQL injection payloads uh on a few of the endpoints for the uh the server.",
+      "node_ids": [
+        "n_sql_injection"
+      ],
+      "edge_ids": [
+        "e_sql_injection"
+      ]
+    },
+    {
+      "id": "sql-execution",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 4594",
+      "quotation": "Uh so it was really cool to see it actually exploit this SQL injection.",
+      "node_ids": [
+        "n_sql_query_execution"
+      ],
+      "edge_ids": [
+        "e_sql_injection"
+      ]
+    },
+    {
+      "id": "reported-counts",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 9528",
+      "quotation": "And actually this single way is actually two account registrations and three SQL injections.",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "linked-data",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 4666",
+      "quotation": "And then to like add additional impact, we can look at the linked servers for this SQL server. And there was actually an additional five uh SQL servers inside of the network that we're able to access through this SQL injection and start pulling information out of those databases as well.",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "workforce-data",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 6785",
+      "quotation": "Uh and some of the information that we were able to pull out of some of these databases to you know show that impact was uh things like workforce PII.",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "caller-data",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 7465",
+      "quotation": "So this was really interesting because the the data was actually like a phone number and a geolocation and a time in some cases even the other number that was being called.",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "sim-prerequisites",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 7638",
+      "quotation": "Um, some of the other data that was in there was some of the precursor data that is required for performing the common uh SIM swapping attacks",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "reported-impact",
+      "location": "Supplied episode5.txt, line 1, UTF-8 byte offset 8083",
+      "quotation": "So, uh I think in total there ended up being about 68 1/2 million rows of data that seemed uh impactful to me.",
+      "node_ids": [],
+      "edge_ids": []
+    }
+  ],
+  "validated_paths": [
+    {
+      "edge_ids": [
+        "e_sql_injection"
+      ],
+      "evidence_ids": [
+        "starting-access",
+        "sql-injection",
+        "sql-execution"
+      ]
+    }
+  ],
+  "findings": {
+    "count": 3,
+    "description": "Source-reported SQL injections across the case, not modeled paths or total engagement findings",
+    "evidence_ids": [
+      "reported-counts"
+    ]
+  },
+  "customer_remediation": {
+    "reported_outcome": null,
+    "evidence_ids": [],
+    "details_status": "not_reported"
+  },
+  "assumptions": [
+    "Objective weight 5 represents assumed importance for demonstrated SQL-query execution; it is not customer supplied.",
+    "The patch candidate uses the existing assumed cost of 1 implementation unit, not measured customer effort.",
+    "Patching the represented SQL injection is modeled as removing e_sql_injection. This does not establish that one patch fixes all three reported injections. Legitimate workload effects are untested."
+  ],
+  "omissions": [
+    "The fixture starts with reported authenticated application access after registration and token issuance. It is not a full Internet-to-data route.",
+    "The vulnerability represents one unnamed successful SQL injection, not all three combined. The source does not identify which registration mechanism or endpoint supplies this partial route.",
+    "Registration alternatives and token issuance remain supporting history outside the severable path. No account-removal, token-removal, or registration-policy candidate is modeled.",
+    "The other reported injections are not encoded as substitute edges or bypass hypotheses.",
+    "Linked-server queries and sensitive telecom-data retrieval remain source-reported case results in provenance. They are not assigned to the represented injection or counted as its objective.",
+    "No SQL principal, database role, permission binding, server identity, or linked-server topology is inferred.",
+    "The transcript's five additional SQL servers and the diagram's five reachable SQL servers do not establish an exact total or topology.",
+    "The roughly 68.5 million rows describe reported impact scope, not proof that every row was exfiltrated. SIM-swap prerequisites do not establish an executed SIM-swap attack.",
+    "Three SQL injections is a source-reported category count, not the total engagement finding count or a customer change count. No specific customer remediation actions are established.",
+    "This is a separate regression fixture, not part of the Fortune 600 demo input."
+  ]
+}

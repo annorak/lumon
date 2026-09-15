@@ -921,3 +921,643 @@ independent answer key that tries every possible set of changes on small example
 
 - Task 10 adds broader generated property checks against the independent answer key.
 - Task 11 sweeps budgets to produce the Pareto frontier.
+
+## Task: Demo release planning
+
+_2026-09-11_
+
+**What changed in plain English**
+
+Added a standalone task for turning the existing solver into a small public
+demonstration using the Kill Chains and Coffee transcripts. It covers checking
+the source material, comparing the customer's fixes with Lumon's answer,
+testing that answer, and producing the README, image, animation, and video.
+
+The plan uses the existing solver that finds the cheapest set of changes
+covering every supplied validated path. It does not require the later
+cost-versus-coverage chart or the other deferred analysis features. It does
+require a real, limited bypass queue, with every candidate clearly labeled
+as something that still needs testing.
+
+**New things you can now do**
+
+- Give an implementation agent one task file containing the demo release
+  requirements, review gates, evidence rules, and acceptance checks.
+
+**Files added or changed**
+
+- `.private/task-demo-release.md`: the standalone demo implementation task.
+- `CHANGELOG.md`: records this planning change.
+
+**Gotchas worth knowing**
+
+- This entry records a plan, not an implemented demo or completed Task 10.
+- The task file is private planning material and remains ignored by Git.
+- The known fractional-budget issue remains deferred because the proposed
+  demo does not use budgeted optimization.
+- The source and computation must support the headline. The plan does not
+  promise that the result will show fewer changes.
+
+**Not done yet**
+
+- Transcript encoding, focused verification, the bypass queue, demo command,
+  public media, README update, and release checks described in the new task.
+- The full original Task 10 verification suite and later product features.
+
+## Task: Demo release source decisions
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Updated the release plan to represent the single Fortune 600 route narrated
+in the podcast. The 12 reported RCE findings stay a separate source count.
+The other episodes retain the agreed distinctions between successful
+routes, unsuccessful branches, and unresolved identities or route pairings.
+
+The supplied evidence does not describe the customer's actual fixes.
+The demo will report that limitation beside Lumon's computed result.
+Customer costs, change counts, path coverage, and remaining access will
+stay unknown. This prevents the demo from claiming savings it cannot check.
+
+**New things you can now do**
+
+- Follow a release plan that distinguishes reported remediation from
+  a computed portfolio of proposed environment changes.
+
+**Files added or changed**
+
+- `.private/task-demo-release.md`: records the source decisions and revised comparison.
+- `CHANGELOG.md`: records this planning change.
+
+**Gotchas worth knowing**
+
+- This entry records planning decisions; no demo result has been computed.
+- An unavailable customer bypass queue does not mean no bypasses exist.
+- The private task file remains ignored by Git.
+
+**Not done yet**
+
+- Fixtures, focused verification, bypass generation, demo command, media,
+  README updates, fresh-run measurement, and public release checks.
+- The original Task 10 suite, full Task 13, and other deferred product features.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, Fortune 600 fixture
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added the one Fortune 600 attack route narrated in Episode 4. The graph
+keeps the two exploited weaknesses and the stolen credential material
+separate so proposed changes remove the correct steps.
+
+Added short source excerpts and records connecting the graph to those
+excerpts. Regression tests check the exact route and four approved changes,
+including their assumed costs. They also check quotation matching and
+source references. Human review still decides whether a quotation supports
+the interpretation.
+
+**New things you can now do**
+
+- Load the Fortune 600 example and extract its single reviewed route.
+- Trace its nodes, transitions, 12 reported findings, and remediation
+  statement to the supplied excerpts from the episode.
+
+**Files added or changed**
+
+- `fixtures/armadin/graphs/episode4-fortune600.json`: the approved attack graph.
+- `fixtures/armadin/sources/episode4-excerpts.txt`: selected source text.
+- `fixtures/armadin/provenance/episode4-fortune600.json`: evidence and assumptions.
+- `tests/unit/test_armadin_fixtures.py`: fixture and provenance regressions.
+- `CHANGELOG.md`: records this stage.
+
+**Gotchas worth knowing**
+
+- The 12 reported findings do not establish 12 complete modeled paths.
+- Credential removal is one assumed change covering unspecified credential material.
+- Customer change counts, costs, removal effects, and remaining access are unknown.
+- No solver portfolio has been computed or selected for the release yet.
+
+**Not done yet**
+
+- Other episode fixtures, the chain inventory, focused generated verification,
+  bypass generation, demo command, media, README, timing, and public CI checks.
+- The original Task 10 suite, full Task 13, and other deferred product features.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, source inventory
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added an inventory of the supplied podcast chains. It distinguishes the
+approved Fortune 600 fixture from routes whose graph still needs review.
+It also records source gaps so later fixtures do not silently invent paths.
+
+Recorded the decision to keep the exposed files in Episodes 1 and 2 as
+evidence of how attackers discovered flaws, outside the paths being severed.
+Hiding a file does not fix the vulnerability it revealed.
+
+**New things you can now do**
+
+- Find each supplied episode and see which route mappings remain unfinished.
+- Check the approved source decisions before proposing another fixture.
+
+**Files added or changed**
+
+- `fixtures/armadin/AMBIGUITIES.md`: source inventory, decisions, and open mappings.
+- `CHANGELOG.md`: records this documentation stage.
+
+**Gotchas worth knowing**
+
+- A narrated chain is not automatically an encoded or counted path.
+- The file disclosures remain source-reported actions outside the optimization graph.
+- Customer remediation details remain unknown; no savings comparison is supported.
+- This documentation change does not compute a demo result or change solver behavior.
+
+**Not done yet**
+
+- Other fixtures, focused verification, bypass generation, demo command,
+  media, README, fresh-run measurement, and public CI remain release work.
+- The original Task 10 suite, full Task 13, and later product features remain deferred.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, Episode 1 post-login fixture
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added the reported Episode 1 route from web access after admin login to
+code execution on the database host. The graph keeps SQL injection
+separate from the database permissions that enabled command execution.
+
+The source does not say whether SQL injection required authentication.
+The fixture therefore starts after the reported login. The earlier
+authentication flaw and exposed source code remain in its evidence record,
+but fixing them does not count as severing this modeled route.
+
+Added approved excerpts and tests for the exact route, two candidate
+changes, assumed costs, and source references. Both episode fixtures now
+reuse the same quotation-and-reference checks.
+
+**New things you can now do**
+
+- Check the reported post-login route without inventing an authentication dependency.
+- Trace the SQL injection and database-host execution to the supplied transcript.
+
+**Files added or changed**
+
+- `fixtures/armadin/graphs/episode1-post-login.json`: the post-login attack graph.
+- `fixtures/armadin/sources/episode1-excerpts.txt`: approved source excerpts.
+- `fixtures/armadin/provenance/episode1-post-login.json`: evidence and modeling limits.
+- `fixtures/armadin/AMBIGUITIES.md`: records the approved scope and removal contract.
+- `tests/unit/test_armadin_fixtures.py`: adds regressions and shares source checks.
+- `CHANGELOG.md`: records this fixture stage.
+
+**Gotchas worth knowing**
+
+- This fixture does not model the full Internet-to-RCE route.
+- Permission reduction must block the configuration-and-execution sequence.
+  Turning off a setting that the same identity can restore is insufficient.
+- Weight 5 and implementation costs are assumptions. Finding totals and
+  customer remediation details are unknown.
+- No release solver portfolio has been computed.
+
+**Not done yet**
+
+- Remaining episode fixtures, focused verification, bypass generation, demo
+  command, media, README, fresh-run measurement, and public CI.
+- The original Task 10 suite, full Task 13, and later product features remain deferred.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, Episode 2 auction-site fixture
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added the reported auction-site route from unauthenticated access to server
+code execution. The graph separates the WebSocket authentication bug from
+SQL injection and the account creation, login, and plugin execution that followed.
+
+The final transition states that whole sequence explicitly. It does not
+claim that SQL injection directly executed an operating-system command.
+The fixture's candidate changes are limited to fixing the two reported
+vulnerabilities. Broader policy changes are not modeled.
+
+Added approved excerpts and tests for the exact route, two patch candidates,
+assumed costs, and source references. The three episode fixtures now share
+the catalog-summary check as well as the existing source checks.
+
+**New things you can now do**
+
+- Check the auction-site chain without inventing a separate Joomla vulnerability.
+- Trace the abbreviated final transition to both account creation and plugin execution.
+
+**Files added or changed**
+
+- `fixtures/armadin/graphs/episode2-auction.json`: the two-transition attack graph.
+- `fixtures/armadin/sources/episode2-excerpts.txt`: approved source excerpts.
+- `fixtures/armadin/provenance/episode2-auction.json`: evidence and catalog limits.
+- `fixtures/armadin/AMBIGUITIES.md`: records the approved mapping.
+- `tests/unit/test_armadin_fixtures.py`: adds regressions and shares catalog checks.
+- `CHANGELOG.md`: records this fixture stage.
+
+**Gotchas worth knowing**
+
+- CLAUDE.md remains reconnaissance context, not a severable prerequisite.
+- Removing the account created by SQL injection is not treated as fixing the route.
+- Weight 5 and both patch costs of 1 are assumptions. Finding totals and
+  customer remediation details are unknown.
+- This fixture does not change the Fortune 600 demo input.
+- No release solver portfolio has been computed.
+
+**Not done yet**
+
+- Remaining episode fixtures, focused verification, bypass generation, demo
+  command, media, README, fresh-run measurement, and public CI.
+- The original Task 10 suite, full Task 13, and later product features remain deferred.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, Episode 3 building-management fixture
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added the reported route from an assumed corporate foothold to a building
+management system. The attacker exploits PrintNightmare, reads a locally
+stored operator credential, and uses it to log in.
+
+The fixture ends at the reported console access, sensor data, and network
+visibility. It does not claim control of physical equipment. The unsuccessful
+service-account branch stays in the source record, outside this route.
+
+Added source excerpts, diagram captions, and tests for the exact route,
+candidate changes, assumed costs, and evidence references. These checks
+keep the successful route separate from a branch that did not reach the goal.
+
+**New things you can now do**
+
+- Check the building-management route independently of Episode 3's cloud chain.
+- Trace its three transitions and two modeled fixes to the reviewed evidence and assumptions.
+
+**Files added or changed**
+
+- `fixtures/armadin/graphs/episode3-building-management.json`: the three-transition graph.
+- `fixtures/armadin/sources/episode3-building-management-excerpts.txt`: approved excerpts.
+- `fixtures/armadin/provenance/episode3-building-management.json`: evidence and modeling limits.
+- `fixtures/armadin/AMBIGUITIES.md`: records the approved scope and removal effects.
+- `tests/unit/test_armadin_fixtures.py`: adds four regression checks using existing helpers.
+- `CHANGELOG.md`: records this fixture stage.
+
+**Gotchas worth knowing**
+
+- The starting foothold is assumed. No initial phishing or other breach is established.
+- Credential removal must both eliminate readable usable material and invalidate
+  it for login, without leaving an equally readable usable replacement.
+  Deletion alone or rotation alone does not establish both effects.
+- That change's implementation remains untested under host administrator control.
+- Weight 5 and costs 1 and 3 are assumptions, not customer measurements.
+- Finding totals and customer remediation details are unknown.
+- The Fortune 600 input is unchanged. No release solver portfolio has been computed.
+
+**Not done yet**
+
+- Remaining episode fixtures, focused verification, bypass generation, demo
+  command, media, README, fresh-run measurement, and public CI.
+- The original Task 10 suite, full Task 13, and later product features remain deferred.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, Episode 5 post-registration fixture
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added a partial route that starts after account registration and token
+issuance, then reaches successful SQL-query execution through the application.
+It represents one unnamed SQL injection, not all three described in the episode.
+
+The source also reports linked-server access and sensitive telecom data.
+Those results stay in provenance because the source does not map individual
+injections to the retrieved datasets. The fixture cannot claim that its
+single patch prevents the full Internet-to-data attack.
+
+Added nine source excerpts and tests for the exact partial route, its one
+patch candidate, and the separation between that route and the broader case.
+The source's count of three SQL injections remains separate from the number
+of paths in the fixture.
+
+**New things you can now do**
+
+- Check the reported post-registration SQL injection without inventing endpoint pairings.
+- Read the broader case evidence without counting it as this fixture's data coverage.
+
+**Files added or changed**
+
+- `fixtures/armadin/graphs/episode5-post-registration.json`: the partial attack graph.
+- `fixtures/armadin/sources/episode5-excerpts.txt`: approved source excerpts.
+- `fixtures/armadin/provenance/episode5-post-registration.json`: evidence and scope limits.
+- `fixtures/armadin/AMBIGUITIES.md`: records the approved partial encoding.
+- `tests/unit/test_armadin_fixtures.py`: adds four checks using existing helpers.
+- `CHANGELOG.md`: records this fixture stage.
+
+**Gotchas worth knowing**
+
+- Weight 5 and patch cost 1 are assumptions, not customer measurements.
+- The patch affects the represented injection. It is not a claim that one
+  change fixes all three reported SQL injections.
+- The three injections are a reported category count, not all engagement findings.
+- About 68.5 million rows describe reported impact scope, not proof all were stolen.
+  SIM-swap prerequisites do not establish a completed SIM swap.
+- Customer remediation details are unknown.
+- The Fortune 600 input is unchanged. No release solver portfolio has been computed.
+
+**Not done yet**
+
+- Unresolved source mappings, including Episode 3's cloud chain and the complete
+  external routes for the partial fixtures.
+- Focused verification, bypass generation, demo command, media, README,
+  fresh-run measurement, and public CI.
+- The original Task 10 suite, full Task 13, and later product features remain deferred.
+- The known fractional-budget issue remains unfixed.
+
+## Task: Demo release, focused full-cover verification
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added generated tests for the workflow that finds the cheapest set of changes
+severing every supplied validated path. They check the reported path IDs, cost,
+weight, and input fingerprint, which identifies the paths and changes used.
+They also compare small results with the existing brute-force answer key.
+
+The tests include empty inputs, shared and overlapping changes, equal-cost
+choices, paths that no available change can sever, and more expensive changes
+that cannot improve the answer. Generated attack graphs run through the real
+validation, path extraction, intervention synthesis, and solver code.
+
+Added a deliberately broken toy that prefers one change even when a pair costs
+less. Hypothesis must find its mistake and reduce the example to at most three
+changes. A separate saved example keeps the cost-2 pair versus cost-9 single
+change easy to inspect. This is a test of the checking process, not a production
+bug report.
+
+Added `make verify` for a deeper search with a fresh printed numeric seed and
+a documented replay command. Normal runs use 200 cheap examples and 50 oracle
+examples. The deeper profile uses 1000 and 250. These tests search for mistakes;
+they are not a proof for every possible input.
+
+**New things you can now do**
+
+- Check full-cover results across varied inputs using existing cost tiers.
+- Replay a deeper generated run using its printed seed.
+- Add reviewed examples to the separate JSON regression directory.
+
+**Files added or changed**
+
+- `tests/conftest.py`: normal and deep Hypothesis profiles.
+- `tests/property/strategies.py`: synthetic test inputs built through public models.
+- `tests/property/test_full_cover.py`: the focused properties and overlap example.
+- `tests/property/test_shrinking.py`: broken-toy shrinking and saved-example replay.
+- `tests/property/regression/cheaper_pair.json`: the reviewed cost-2 example.
+- `Makefile`: the deeper verification command.
+- `README.md`: current solver status, verification commands, and limitations.
+- `CHANGELOG.md`: records this verification stage.
+
+**Gotchas worth knowing**
+
+- Oracle comparisons stop at 12 interventions. Production still uses only CP-SAT.
+- Optimality assertions require EXACT. Tied solvers may select different portfolios.
+- Empty dimensions and zero-coverage changes are intentional test cases.
+  An off-path edge makes a zero-coverage change legal without changing the schema.
+- The focused command does not collect coverage. The complete suite still enforces
+  the existing 90 percent floor.
+- No source fixture, cost default, or production solver behavior changed.
+- No Fortune 600 release portfolio or numerical customer comparison is reported here.
+
+**Not done yet**
+
+- The original Task 10 budgeted and broader numeric verification remains deferred.
+  The known fractional-budget issue is unchanged, and its regression still runs.
+- The limited bypass generator, demo command, media, release README, fresh-run
+  measurement, and public CI remain pending. Full Task 13 is not complete.
+- Frontier, robustness, normalization, and later product features remain deferred.
+
+## Task: Demo release, bounded bypass hypotheses
+
+_2026-09-14_
+
+**What changed in plain English**
+
+Added a queue of candidate routes to test after choosing environment changes.
+Each candidate replaces one blocked step with an observed or inferred transition
+already in the graph. The two supported rules change either the entry transition
+into a service or the vulnerability enabling an exploit. These are unvalidated
+hypotheses, not new findings or paths counted by the optimizer.
+
+The generator checks the whole selected set of changes. It excludes a candidate
+if any retained step is removed, and requires a reviewed explanation of whether
+each selected change blocks the replacement. Missing explanations raise an error.
+This prevents an alternate route from looking viable just because we checked
+only one of the chosen fixes.
+
+Observed replacements rank before inferred ones. Within each group, larger
+objective weight times the fraction of original steps retained ranks first.
+Stable IDs break ties, duplicate routes appear once, and the queue reports when
+its size limit leaves candidates out. Every displayed hypothesis must use the
+shared wording that calls it unvalidated and recommends validation.
+
+The earlier live Fortune 600 library run returned EXACT and selected INT-003,
+the modeled server-side request forgery patch, at an assumed cost of 1. It severs
+the one supplied validated path, whose objective has assumed weight 10. That gives
+N = 1 supplied validated path and M = 1 selected change. K = 12 is the podcast's
+separate count of reported remote-code-execution findings. The fixture has no
+observed or inferred replacements, so its generated queue is empty. This does not
+establish that no bypasses exist or that Lumon independently reproduced the
+source-reported attack.
+
+Added 48 test cases, including nonempty synthetic queues, tied rankings, changed
+evidence, blocking fixes, invalid inputs, and the real fixture's empty queue.
+Synthetic routes stay inside tests and do not alter the source-backed counts.
+These checks and the existing generated full-cover tests search for mistakes;
+they are not a proof for every possible input.
+
+**New things you can now do**
+
+- Generate a bounded test queue for an explicit set of selected intervention IDs.
+- Trace each candidate to its original path, replacement evidence, and assumptions.
+- Repeat generation with the same inputs and obtain the same ordered queue.
+- Run `.venv/bin/pytest` in the installed development environment to check the
+  complete suite, including both substitution rules.
+
+**Files added or changed**
+
+- `src/lumon/model/hypothesis.py`: candidate records, queue metadata, and shared wording.
+- `src/lumon/hypotheses/generate.py`: the two substitution rules and deterministic ranking.
+- `tests/unit/test_hypotheses.py`: synthetic checks and the Fortune 600 empty-queue check.
+- `CHANGELOG.md`: records this stage and the earlier live library result.
+
+**Gotchas worth knowing**
+
+- The input fingerprint identifies the supplied paths and intervention catalog.
+  Each queue also records the selected IDs, since different selections share that
+  fingerprint. Regenerate after graph or applicability changes; the fingerprint
+  does not include observed or inferred transitions.
+- A validated replacement belongs in path analysis. If it exposes a route missing
+  from the supplied paths, generation raises instead of calling it a hypothesis.
+- Path weights must be finite at this new generator boundary. An infinite weight
+  times a zero retained fraction would produce an undefined score and unstable ordering.
+  Existing graph, path, and solver numeric contracts are unchanged.
+- A one-step original path gives a replacement a zero retention score. That is
+  intentional, not a statement that the candidate has no security impact.
+- Costs and objective weights are assumptions. EXACT proves minimum cost only
+  over the supplied validated paths and available intervention catalog.
+- The podcast reports remediation of all 12 findings, but customer implementation
+  changes, count, cost, removal effects, coverage, and remaining access are unknown.
+  The customer queue is unavailable, not empty. No numerical savings claim follows.
+- No source fixture, cost default, production solver, or dependency changed.
+
+**Not done yet**
+
+- The demo command and shared result artifact, PNG, GIF, 90-second video, release
+  README, fresh-environment timing, and public CI still need to be completed.
+- This is a demo-first stage, not completion of the original Task 10 or full Task 13.
+  Broader bypass rules, budgeted verification, and broader numeric checks remain deferred.
+- The known fractional-budget issue is unchanged and its regression still runs.
+- Frontier, robustness, normalization, and later product features remain deferred.
+
+## Task: Demo release, live command and shared result
+
+_2026-09-15_
+
+**What changed in plain English**
+
+From the repository root, `uv run --frozen python demo/run_demo.py` now runs the
+reviewed Fortune 600 example end to end. It validates the graph and source metadata
+and checks that extracted paths match the reviewed route. It builds possible changes
+using the existing assumed costs and calls the existing CP-SAT optimizer.
+It prints the comparison and writes
+`demo/output/result.json`. It computes a fresh answer on every run.
+
+The verified result selects INT-003, the modeled server-side request forgery patch,
+at an assumed cost of 1. It severs the one supplied source-validated path, with an
+assumed objective weight of 10. The result is EXACT, meaning the optimizer proved
+minimum cost over the supplied paths and available changes. N = 1 counts the
+supplied path, M = 1 counts selected changes, and K = 12 is the podcast's separate
+count of reported remote-code-execution findings. Lumon did not reproduce the attack.
+
+The console output and JSON use one result object. The JSON includes the selected
+changes, coverage, remaining transitions, evidence references, assumptions, and
+bypass queue. Run timing and absolute machine paths stay out of this repeatable
+output. The command rejects incomplete extraction, solver failures, and unproven
+optima. It writes a complete temporary file before replacing the previous result;
+the tested failures before replacement leave the previous result intact.
+
+Added 39 demo test cases covering reviewed values, public-only inputs, repeatable
+commands, invalid inputs, extraction limits, solver failures, and output handling.
+One test compares the saved JSON with a fresh computation and checks the README
+headline, repository link, and command. The full local suite passed 473 tests with
+99.44 percent coverage, including the demo runner. Lint, formatting, and strict type
+checks passed. Generated tests search for mistakes; they do not prove correctness
+for every possible input.
+
+**New things you can now do**
+
+- Run the fixed example with Python 3.12 and uv, without private transcripts,
+  API keys, Docker, a database, or external service accounts. Dependency setup may
+  need internet access; the installed demo makes no runtime network calls.
+- Inspect the computed JSON and trace its claims back to the reviewed input.
+- Run `make check` to check the code and catch drift between the live result,
+  saved JSON, and README. The coverage floor remains 90 percent.
+
+**Files added or changed**
+
+- `demo/run_demo.py`: runs the existing pipeline and renders its shared result.
+- `demo/output/result.json`: the reviewed, repeatable output for the fixed input.
+- `tests/unit/test_demo.py`: 39 regression cases for results and failure handling.
+- `pyproject.toml`: includes the demo runner in coverage measurement.
+- `.github/workflows/ci.yml`: runs the documented live command after existing checks.
+- `README.md`: documents the working command, result, prerequisites, and limitations.
+- `CHANGELOG.md`: records this locally completed work and remaining release requirements.
+
+**Gotchas worth knowing**
+
+- Costs use assumed implementation units, not customer hours or dollars. Objective
+  weights are assumptions too. The optimizer minimizes cost, not change count.
+  Other equally cheap choices exist for this fixture.
+- The podcast reports remediation of all 12 findings, but the customer's actual
+  changes, count, cost, removal effects, coverage, and remaining access are unknown.
+  Its bypass queue is unavailable, not an empty generated queue. No numerical
+  savings comparison is supported.
+- Lumon's actual queue is empty because this fixture supplies no observed or
+  inferred replacement transitions. Nonempty queues are exercised in separate
+  synthetic tests. Empty does not mean that no bypass exists.
+- The selected patch leaves modeled credential-read and authentication transitions.
+  Those remaining steps do not prove a surviving end-to-end route. Kubernetes
+  permission bindings and operational side effects are not separately modeled.
+- Two runs of the exact command took 1.35 and 0.82 seconds in the existing environment.
+  The first rebuilt and reinstalled the local Lumon package. The lock file stayed
+  unchanged, and both runs wrote identical JSON. These are not fresh-install timings.
+- Include the reviewed result file in the eventual approved commit. CI checks the
+  saved artifact before running the command that regenerates it.
+- Source fixtures, cost defaults, the production solver, dependency declarations,
+  and the lock file are unchanged by this stage.
+
+**Not done yet**
+
+- Measure an isolated fresh install-and-run below two minutes and document the
+  laptop, prerequisites, OS, Python version, and network conditions.
+- Produce and inspect the PNG, GIF, and playable 90-second video with regeneration
+  sources. Finish media/result consistency checks, the required README media layout,
+  and the copyable share message.
+- Obtain separate approval for commits, pushes, uploads, or visibility changes.
+  Public asset access, a successful public CI run, and its live badge remain pending.
+- This demo-first work does not complete the original Task 10 or full Task 13.
+  Broader numeric and budgeted checks and additional bypass rules remain deferred.
+  The known budget issue with costs 0.1 and 0.2 at budget 0.3 is unchanged; its
+  regression still runs, and this demo does not use budgeted solving.
+- Frontier, robustness sweeps, predicate normalization, LLM-assisted ingestion,
+  general-purpose reporting, and the full CLI remain deferred.
+
+## Task: Demo release, waive fresh-install benchmarking
+
+_2026-09-15_
+
+**What changed in plain English**
+
+The user removed fresh-install benchmarking and the two-minute target from
+this demo release. The README and local task brief no longer list that work
+as a release requirement.
+
+This is a scope change, not a successful benchmark. Existing-environment
+timings remain exactly that. Earlier changelog entries are unchanged; this
+entry supersedes their benchmark to-do items. No code, tests, source data,
+cost assumptions, or computed results changed.
+
+**New things you can now do**
+
+- Continue the release work without a fresh-install timing gate.
+
+**Files added or changed**
+
+- `README.md`: removes fresh-install timing from the remaining work.
+- `.private/task-demo-release.md`: updates local requirements; excluded from Git.
+- `CHANGELOG.md`: records the waiver without rewriting earlier history.
+
+**Gotchas worth knowing**
+
+- Skipping the benchmark does not support a fresh-install speed claim.
+- The private task brief and transcripts remain excluded from the commit.
+
+**Not done yet**
+
+- Release PNG, GIF, playable 90-second video, and their regeneration sources.
+- Final README media layout, copyable share message, and media/result checks.
+- Public asset verification, successful public release CI, and its live badge.

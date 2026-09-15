@@ -1,0 +1,50 @@
+{
+  "nodes": [
+    { "id": "n_corporate_foothold", "type": "entry_point", "label": "Assumed low-privileged contractor foothold on the corporate network" },
+    { "id": "n_printnightmare", "type": "vulnerability", "label": "PrintNightmare, CVE-2021-34527" },
+    { "id": "n_windows_server", "type": "asset", "label": "Windows Server 2019" },
+    { "id": "n_bms_operator_credential", "type": "credential", "label": "Plaintext BMS operator credential in the host-local Desigo database" },
+    {
+      "id": "n_bms_console_access",
+      "type": "objective",
+      "label": "Reported BMS console access, sensor data, and OT-network visibility",
+      "weight": 5.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_printnightmare",
+      "source": "n_corporate_foothold",
+      "target": "n_windows_server",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_printnightmare",
+      "attributes": {
+        "operation": "Exploit PrintNightmare to load a DLL as SYSTEM and create local administrator access"
+      }
+    },
+    {
+      "id": "e_credential_read",
+      "source": "n_windows_server",
+      "target": "n_bms_operator_credential",
+      "type": "reads",
+      "evidence": "validated",
+      "attributes": {
+        "operation": "Read plaintext operator credentials from the server's local Desigo BMS database"
+      }
+    },
+    {
+      "id": "e_bms_login",
+      "source": "n_bms_operator_credential",
+      "target": "n_bms_console_access",
+      "type": "authenticates_as",
+      "evidence": "validated"
+    }
+  ],
+  "metadata": {
+    "graph_id": "armadin-kcc-episode3-building-management",
+    "source_url": "https://www.youtube.com/watch?v=EIXWUWXRlXs",
+    "evidence_scope": "One source-reported BMS route from an assumed corporate foothold; not independently reproduced by Lumon.",
+    "objective_weight_provenance": "Assumed weight 5 for reported BMS access; no physical equipment control or further OT compromise established."
+  }
+}

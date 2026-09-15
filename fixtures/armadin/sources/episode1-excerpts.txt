@@ -1,0 +1,22 @@
+Kill Chains and Coffee, episode 1
+Publisher: Armadin
+Public source: https://www.youtube.com/watch?v=6H07KzPNT2w
+
+Selected excerpts from the supplied transcript.
+Transcript spelling and speech markers are preserved. Byte offsets are zero-based
+and refer to the supplied original transcript, not this excerpt file.
+
+[source-disclosure] Supplied episode1.txt, line 1, UTF-8 byte offset 712
+On this exposed directory listing was a folder with the name DLL. It turns out that folder contained the source code for the web app.
+
+[starting-access] Supplied episode1.txt, line 1, UTF-8 byte offset 917
+We noticed there were authentication flaws and were able to log in as the admin.
+
+[sql-injection] Supplied episode1.txt, line 1, UTF-8 byte offset 998
+We noticed there was a SQL injectable endpoint and we tried to do SQL injection. We failed. It turns out there was a WAF sitting in front of it. We fingerprinted it as a Nawkami WAF and bypassed the WAF.
+
+[database-access] Supplied episode1.txt, line 1, UTF-8 byte offset 1202
+From there, we landed in an MS SQL database and saw that we were actually over provisioned acting on behalf of the application and were able to change the configuration of the MS SQL database to flip a flag that lets us run a command called XP command shell.
+
+[host-execution] Supplied episode1.txt, line 1, UTF-8 byte offset 1461
+And once we did that, we ran that command and had remote code execution on the server hosting the database.

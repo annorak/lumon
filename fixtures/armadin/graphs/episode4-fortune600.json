@@ -1,0 +1,62 @@
+{
+  "nodes": [
+    { "id": "n_internet", "type": "entry_point", "label": "Unauthenticated internet access" },
+    { "id": "n_public_endpoint", "type": "service", "label": "Public endpoint in the narrated route" },
+    { "id": "n_ssrf", "type": "vulnerability", "label": "Server-side request forgery" },
+    { "id": "n_internal_service", "type": "service", "label": "Internal Kubernetes service" },
+    { "id": "n_published_cve", "type": "vulnerability", "label": "Published CVE, identifier not reported" },
+    { "id": "n_execution_identity", "type": "identity", "label": "Unnamed Kubernetes execution identity" },
+    { "id": "n_credential_material", "type": "credential", "label": "Obtained third-party credential material" },
+    {
+      "id": "n_cloud_compromise",
+      "type": "objective",
+      "label": "Reported full cloud infrastructure compromise",
+      "weight": 10.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_public_reach",
+      "source": "n_internet",
+      "target": "n_public_endpoint",
+      "type": "reaches",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_ssrf",
+      "source": "n_public_endpoint",
+      "target": "n_internal_service",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_ssrf"
+    },
+    {
+      "id": "e_cve_execution",
+      "source": "n_internal_service",
+      "target": "n_execution_identity",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_published_cve"
+    },
+    {
+      "id": "e_credential_read",
+      "source": "n_execution_identity",
+      "target": "n_credential_material",
+      "type": "reads",
+      "evidence": "validated"
+    },
+    {
+      "id": "e_cloud_authentication",
+      "source": "n_credential_material",
+      "target": "n_cloud_compromise",
+      "type": "authenticates_as",
+      "evidence": "validated"
+    }
+  ],
+  "metadata": {
+    "graph_id": "armadin-kcc-episode4-fortune600",
+    "source_url": "https://www.youtube.com/watch?v=RxLj-4BsYhg",
+    "evidence_scope": "One narrated route reported as exercised by Armadin; not independently reproduced by Lumon.",
+    "objective_weight_provenance": "Assumed importance for full cloud compromise; not customer supplied."
+  }
+}

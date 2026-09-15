@@ -1,0 +1,28 @@
+Kill Chains and Coffee, episode 4
+Publisher: Armadin
+Public source: https://www.youtube.com/watch?v=RxLj-4BsYhg
+
+Selected excerpts from the supplied transcript and a transcribed diagram caption.
+Transcript spelling and speech markers are preserved. Byte offsets are zero-based
+and refer to the supplied original transcript, not this excerpt file.
+
+[case] Supplied episode4.txt, line 1, UTF-8 byte offset 3220
+Fortune 600 if you can imagine a company
+
+[public-entry] Supplied episode4.txt, line 1, UTF-8 byte offset 3912
+the agents discovered um in an unauthenticated manner uh 12 endpoints which were each individually vulnerable to remote code execution from the broader internet.
+
+[exploitation] Supplied episode4.txt, line 1, UTF-8 byte offset 4499
+what what really transpired was the identification of these endpoints being vulnerable to serverside request forgery um that we then that the agents then parlayed into using a known published CVE from 2025 if I remember correctly uh and in the combination of that SSRF and that CVE allowed the agents to get that unauthenticated rce but when that unauthenticated rce actually fired it actually executed in the context of a um what turned out to be an overly permissive Kubernetes service.
+
+[credential-read] Supplied episode4.txt, line 1, UTF-8 byte offset 5140
+And the agents then leverage that access that overly permissive access to identify and excfiltrate credentials for third-party services um effectively escaping the Kubernetes pod.
+
+[cloud-authentication] Supplied episode4.txt, line 1, UTF-8 byte offset 5320
+And so the agents then um used that identification of the credentials, excfiltrated them out uh to a a uh a owned server and from there the agents were able to authenticate to the client's cloud service directly effectively compromising their cloud infrastructure comp in its entirety.
+
+[remediation] Supplied episode4.txt, line 1, UTF-8 byte offset 6867
+They've gone through and they've fixed >> every single one and they fix >> absolutely >> I know within a low double digit number of hours, right?
+
+[internal-service] Supplied episode4.png, caption for step 3
+3. Fetched an internal Kubernetes service not accessible to the internet

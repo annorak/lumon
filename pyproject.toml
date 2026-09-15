@@ -82,7 +82,7 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["src/lumon"]
+source = ["src/lumon", "demo"]
 branch = true
 
 [tool.coverage.report]

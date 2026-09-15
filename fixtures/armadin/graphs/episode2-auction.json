@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    { "id": "n_internet", "type": "entry_point", "label": "Unauthenticated internet access" },
+    { "id": "n_authentication_bug", "type": "vulnerability", "label": "Broken WebSocket authentication check" },
+    { "id": "n_bid_websocket", "type": "service", "label": "Auction bid WebSocket service" },
+    { "id": "n_sql_injection", "type": "vulnerability", "label": "SQL injection through bid_type" },
+    {
+      "id": "n_server_rce",
+      "type": "objective",
+      "label": "Reported server code execution through a Joomla plugin",
+      "weight": 5.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_authentication_bypass",
+      "source": "n_internet",
+      "target": "n_bid_websocket",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_authentication_bug"
+    },
+    {
+      "id": "e_sql_to_host_execution",
+      "source": "n_bid_websocket",
+      "target": "n_server_rce",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_sql_injection",
+      "attributes": {
+        "operation": "Create a privileged account through SQL injection, log in, upload a Joomla plugin, and execute PHP shell_exec"
+      }
+    }
+  ],
+  "metadata": {
+    "graph_id": "armadin-kcc-episode2-auction",
+    "source_url": "https://www.youtube.com/watch?v=KPLQmX_dqNM",
+    "evidence_scope": "One source-reported route with account creation, login, and plugin execution abbreviated in the SQL-injection edge; not independently reproduced by Lumon.",
+    "objective_weight_provenance": "Assumed weight 5 for server code execution; no production-data objective established."
+  }
+}

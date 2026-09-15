@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test check clean
+.PHONY: install lint format typecheck test check verify clean
 
 # Every later task runs `make check` and trusts its output. Keep these targets
 # honest: no target may pass by skipping work or by lowering a threshold.
@@ -21,6 +21,14 @@ test:
 	uv run pytest
 
 check: lint typecheck test
+
+verify:
+	uv run --frozen python -c 'import secrets, sys, pytest; \
+		seed = secrets.randbits(64); \
+		print(f"Hypothesis seed: {seed}", flush=True); \
+		sys.exit(pytest.main(["tests/property", "--no-cov", "-x", \
+		"--hypothesis-profile=demo-deep", f"--hypothesis-seed={seed}", \
+		"--hypothesis-show-statistics"]))'
 
 clean:
 	rm -rf build dist .pytest_cache .mypy_cache .ruff_cache .hypothesis htmlcov

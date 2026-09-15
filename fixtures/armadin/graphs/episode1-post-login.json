@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    { "id": "n_post_login_access", "type": "entry_point", "label": "Reported web access after admin login" },
+    { "id": "n_sql_injection", "type": "vulnerability", "label": "SQL injection at the reported endpoint" },
+    { "id": "n_database_identity", "type": "identity", "label": "Overprivileged application database identity" },
+    {
+      "id": "n_database_host_rce",
+      "type": "objective",
+      "label": "Reported code execution on the database host",
+      "weight": 5.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_sql_injection",
+      "source": "n_post_login_access",
+      "target": "n_database_identity",
+      "type": "exploits",
+      "evidence": "validated",
+      "enabled_by": "n_sql_injection"
+    },
+    {
+      "id": "e_database_command",
+      "source": "n_database_identity",
+      "target": "n_database_host_rce",
+      "type": "can_access",
+      "evidence": "validated",
+      "attributes": {
+        "operation": "Enable database command execution and run an operating-system command"
+      }
+    }
+  ],
+  "metadata": {
+    "graph_id": "armadin-kcc-episode1-post-login",
+    "source_url": "https://www.youtube.com/watch?v=6H07KzPNT2w",
+    "evidence_scope": "Source-reported post-login route only; not a complete Internet-to-RCE route or independently reproduced by Lumon.",
+    "objective_weight_provenance": "Assumed weight 5 for database-host code execution; no production-data objective established."
+  }
+}

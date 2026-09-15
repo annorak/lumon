@@ -1,0 +1,34 @@
+Kill Chains and Coffee, episode 5
+Publisher: Armadin
+Public source: https://www.youtube.com/watch?v=LXzHIG4CqnA
+
+Selected excerpts from the supplied transcript.
+Transcript spelling and speech markers are preserved. Byte offsets are zero-based
+and refer to the supplied original transcript, not this excerpt file.
+
+[starting-access] Supplied episode5.txt, line 1, UTF-8 byte offset 2862
+Then the agents then took their new account that they created and produced uh an additional token that could be used to then start attacking the authenticated portion of the web app.
+
+[sql-injection] Supplied episode5.txt, line 1, UTF-8 byte offset 3150
+Um, from there the agent identified uh three separate endpoints and was able to produce working SQL injection payloads uh on a few of the endpoints for the uh the server.
+
+[sql-execution] Supplied episode5.txt, line 1, UTF-8 byte offset 4594
+Uh so it was really cool to see it actually exploit this SQL injection.
+
+[reported-counts] Supplied episode5.txt, line 1, UTF-8 byte offset 9528
+And actually this single way is actually two account registrations and three SQL injections.
+
+[linked-data] Supplied episode5.txt, line 1, UTF-8 byte offset 4666
+And then to like add additional impact, we can look at the linked servers for this SQL server. And there was actually an additional five uh SQL servers inside of the network that we're able to access through this SQL injection and start pulling information out of those databases as well.
+
+[workforce-data] Supplied episode5.txt, line 1, UTF-8 byte offset 6785
+Uh and some of the information that we were able to pull out of some of these databases to you know show that impact was uh things like workforce PII.
+
+[caller-data] Supplied episode5.txt, line 1, UTF-8 byte offset 7465
+So this was really interesting because the the data was actually like a phone number and a geolocation and a time in some cases even the other number that was being called.
+
+[sim-prerequisites] Supplied episode5.txt, line 1, UTF-8 byte offset 7638
+Um, some of the other data that was in there was some of the precursor data that is required for performing the common uh SIM swapping attacks
+
+[reported-impact] Supplied episode5.txt, line 1, UTF-8 byte offset 8083
+So, uh I think in total there ended up being about 68 1/2 million rows of data that seemed uh impactful to me.

@@ -1,0 +1,150 @@
+{
+  "graph_id": "armadin-kcc-episode3-building-management",
+  "source": {
+    "publication": "Armadin, Kill Chains and Coffee, episode 3, building-management chain",
+    "url": "https://www.youtube.com/watch?v=EIXWUWXRlXs",
+    "excerpts_file": "episode3-building-management-excerpts.txt"
+  },
+  "evidence": [
+    {
+      "id": "assumed-breach",
+      "location": "Supplied episode3.txt, line 1, UTF-8 byte offset 15325",
+      "quotation": "So, as Evan was saying, uh we uh are starting this one from an assumed breach position, right?",
+      "node_ids": [
+        "n_corporate_foothold"
+      ],
+      "edge_ids": []
+    },
+    {
+      "id": "contractor-foothold",
+      "location": "Supplied episode3_2.png, caption for step 1",
+      "quotation": "1. Initial foothold with a low-privileged contractor account",
+      "node_ids": [
+        "n_corporate_foothold"
+      ],
+      "edge_ids": []
+    },
+    {
+      "id": "host-exploitation",
+      "location": "Supplied episode3.txt, line 1, UTF-8 byte offset 16372",
+      "quotation": "And we found a uh relatively old server. Uh right? Once we got on it, we're able to look confidently and say this was a 2019 Windows server uh or Windows 2019 server. We didn't know that at the time. And it was vulnerable specifically to PrintNightmare. This is the old, I think at this point, 5-year-old critical CVE. >> Uh that let you do you from 2021. >> Yeah. Uh so, got an operating system that's what, 7 years old. We got a CVE that's 5 years old. Um and it lets us uh essentially author a payload that gets to run on the box. And uh we used that custom payload to make ourselves a local admin.",
+      "node_ids": [
+        "n_windows_server",
+        "n_printnightmare"
+      ],
+      "edge_ids": [
+        "e_printnightmare"
+      ]
+    },
+    {
+      "id": "printnightmare-cve",
+      "location": "Supplied episode3_2.png, caption for step 2",
+      "quotation": "2. Find a server vulnerable to PrintNightmare (CVE-2021-34527)",
+      "node_ids": [
+        "n_printnightmare"
+      ],
+      "edge_ids": [
+        "e_printnightmare"
+      ]
+    },
+    {
+      "id": "system-execution",
+      "location": "Supplied episode3_2.png, caption for step 4",
+      "quotation": "4. Spooler loads the DLL and code runs as SYSTEM",
+      "node_ids": [
+        "n_windows_server"
+      ],
+      "edge_ids": [
+        "e_printnightmare"
+      ]
+    },
+    {
+      "id": "local-credentials",
+      "location": "Supplied episode3.txt, line 1, UTF-8 byte offset 16974",
+      "quotation": "Uh once we were on that once we were on that server, uh we uh we looked around and found that there was a database running locally. So, this is uh I think this is important context. This is not a network database, right? Like the the server is network, but it wasn't exposed to the rest of the network. You had to be on the actual host to see it. And when we when we looked at what we saw, it looked a lot like a building management system database. Right? We saw product names that helped us understand what we were looking at. We saw, you know, operator uh credentials, things like usernames, password hashes. And we did a whole bunch of work uh trying to crack these password hashes before realizing that the the passwords were actually stored in cleartext right next to the password hashes.",
+      "node_ids": [
+        "n_bms_operator_credential"
+      ],
+      "edge_ids": [
+        "e_credential_read"
+      ]
+    },
+    {
+      "id": "desigo-database",
+      "location": "Supplied episode3_2.png, caption for step 7",
+      "quotation": "7. Access the server and read the Desigo BMS database",
+      "node_ids": [
+        "n_windows_server",
+        "n_bms_operator_credential"
+      ],
+      "edge_ids": [
+        "e_credential_read"
+      ]
+    },
+    {
+      "id": "bms-login",
+      "location": "Supplied episode3.txt, line 1, UTF-8 byte offset 17769",
+      "quotation": "And so, we we took that username, we took that password, and we logged into the application that was hosted on the same endpoint. Um logging in, we're able to understand everything going on in the application, right? So, we could see sensor data, we could look across different OT networks, uh across different protocols.",
+      "node_ids": [
+        "n_bms_console_access"
+      ],
+      "edge_ids": [
+        "e_bms_login"
+      ]
+    },
+    {
+      "id": "service-account-dead-end",
+      "location": "Supplied episode3.txt, line 1, UTF-8 byte offset 20180",
+      "quotation": "And in this particular case we ran a payload that was able to pull back Kerberos tickets and and additional credentials in this particular case. Got a service account, didn't really lead to anything or the particular, you know, compromise that you're describing. But it's kind of interesting to talk about like how and a kill chain doesn't have to be linear, right? It can like spread out. It could be like, hey, we tried the service accounts and nothing yielded there, but we continued down to the building management system. Something yielded there, which is really cool as well.",
+      "node_ids": [],
+      "edge_ids": []
+    }
+  ],
+  "validated_paths": [
+    {
+      "edge_ids": [
+        "e_printnightmare",
+        "e_credential_read",
+        "e_bms_login"
+      ],
+      "evidence_ids": [
+        "assumed-breach",
+        "contractor-foothold",
+        "host-exploitation",
+        "printnightmare-cve",
+        "system-execution",
+        "local-credentials",
+        "desigo-database",
+        "bms-login"
+      ]
+    }
+  ],
+  "findings": {
+    "count": null,
+    "description": "No total finding count reported for the building-management chain",
+    "evidence_ids": []
+  },
+  "customer_remediation": {
+    "reported_outcome": null,
+    "evidence_ids": [],
+    "details_status": "not_reported"
+  },
+  "assumptions": [
+    "Objective weight 5 represents assumed importance for reported BMS console access; it is not customer supplied.",
+    "The patch costs 1 and credential removal costs 3 assumed implementation units, not measured customer effort.",
+    "Patching PrintNightmare is modeled as removing e_printnightmare.",
+    "Credential removal is one modeled change removing both e_credential_read and e_bms_login. It must eliminate the exposed usable material and invalidate the credential for BMS login, without leaving a usable replacement equally readable.",
+    "Clearing storage alone or rotating the password alone does not establish both credential-removal effects. Its implementation and compatibility with BMS operation remain untested, especially under the reported host administrator control. Legitimate workload effects of both candidates are untested."
+  ],
+  "omissions": [
+    "The entry is an assumed corporate foothold, not a demonstrated phishing, insider, supply-chain, or external-exploitation route.",
+    "The first exploit edge includes DLL execution as SYSTEM and creation of local administrator access. The attacker-created account is not a separate removal, permission-reduction, or execution-rebinding target.",
+    "The host-local database is identified in the read operation and source record, not modeled as a separately network-reachable service.",
+    "The credential represents the operator username and password used in the narrated BMS login; it does not establish a count of other stored credentials.",
+    "The service-account-dead-end record preserves reported Kerberos and service-account credential theft separately. It is not a step in the BMS route or a substitute route.",
+    "Password-hash cracking did not supply the credential used by this route; the source reports finding plaintext instead.",
+    "The objective is BMS console access with sensor data and OT-network visibility, not physical equipment control or further OT compromise.",
+    "Separate network segmentation and permission-policy changes are not modeled. No observed or inferred substitute transitions are supplied.",
+    "This fixture is separate from Episode 3's cloud chain and the Fortune 600 demo input. No total finding count or customer remediation actions are established."
+  ]
+}

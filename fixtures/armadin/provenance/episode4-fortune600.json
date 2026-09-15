@@ -1,0 +1,132 @@
+{
+  "graph_id": "armadin-kcc-episode4-fortune600",
+  "source": {
+    "publication": "Armadin, Kill Chains and Coffee, episode 4",
+    "url": "https://www.youtube.com/watch?v=RxLj-4BsYhg",
+    "excerpts_file": "episode4-excerpts.txt"
+  },
+  "evidence": [
+    {
+      "id": "case",
+      "location": "Supplied episode4.txt, line 1, UTF-8 byte offset 3220",
+      "quotation": "Fortune 600 if you can imagine a company",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "public-entry",
+      "location": "Supplied episode4.txt, line 1, UTF-8 byte offset 3912",
+      "quotation": "the agents discovered um in an unauthenticated manner uh 12 endpoints which were each individually vulnerable to remote code execution from the broader internet.",
+      "node_ids": [
+        "n_internet",
+        "n_public_endpoint"
+      ],
+      "edge_ids": [
+        "e_public_reach"
+      ]
+    },
+    {
+      "id": "exploitation",
+      "location": "Supplied episode4.txt, line 1, UTF-8 byte offset 4499",
+      "quotation": "what what really transpired was the identification of these endpoints being vulnerable to serverside request forgery um that we then that the agents then parlayed into using a known published CVE from 2025 if I remember correctly uh and in the combination of that SSRF and that CVE allowed the agents to get that unauthenticated rce but when that unauthenticated rce actually fired it actually executed in the context of a um what turned out to be an overly permissive Kubernetes service.",
+      "node_ids": [
+        "n_ssrf",
+        "n_published_cve",
+        "n_execution_identity"
+      ],
+      "edge_ids": [
+        "e_ssrf",
+        "e_cve_execution"
+      ]
+    },
+    {
+      "id": "credential-read",
+      "location": "Supplied episode4.txt, line 1, UTF-8 byte offset 5140",
+      "quotation": "And the agents then leverage that access that overly permissive access to identify and excfiltrate credentials for third-party services um effectively escaping the Kubernetes pod.",
+      "node_ids": [
+        "n_credential_material"
+      ],
+      "edge_ids": [
+        "e_credential_read"
+      ]
+    },
+    {
+      "id": "cloud-authentication",
+      "location": "Supplied episode4.txt, line 1, UTF-8 byte offset 5320",
+      "quotation": "And so the agents then um used that identification of the credentials, excfiltrated them out uh to a a uh a owned server and from there the agents were able to authenticate to the client's cloud service directly effectively compromising their cloud infrastructure comp in its entirety.",
+      "node_ids": [
+        "n_cloud_compromise"
+      ],
+      "edge_ids": [
+        "e_cloud_authentication"
+      ]
+    },
+    {
+      "id": "remediation",
+      "location": "Supplied episode4.txt, line 1, UTF-8 byte offset 6867",
+      "quotation": "They've gone through and they've fixed >> every single one and they fix >> absolutely >> I know within a low double digit number of hours, right?",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "internal-service",
+      "location": "Supplied episode4.png, caption for step 3",
+      "quotation": "3. Fetched an internal Kubernetes service not accessible to the internet",
+      "node_ids": [
+        "n_internal_service"
+      ],
+      "edge_ids": [
+        "e_ssrf"
+      ]
+    }
+  ],
+  "validated_paths": [
+    {
+      "edge_ids": [
+        "e_public_reach",
+        "e_ssrf",
+        "e_cve_execution",
+        "e_credential_read",
+        "e_cloud_authentication"
+      ],
+      "evidence_ids": [
+        "case",
+        "public-entry",
+        "exploitation",
+        "internal-service",
+        "credential-read",
+        "cloud-authentication"
+      ]
+    }
+  ],
+  "findings": {
+    "count": 12,
+    "description": "Source-reported unauthenticated RCE findings",
+    "evidence_ids": [
+      "public-entry"
+    ]
+  },
+  "customer_remediation": {
+    "reported_outcome": "The podcast reports that all 12 RCE findings were remediated.",
+    "evidence_ids": [
+      "remediation"
+    ],
+    "details_status": "not_reported"
+  },
+  "assumptions": [
+    "Objective weight 10 represents assumed importance for reported full cloud compromise; it is not customer supplied.",
+    "Candidate costs use the existing assumed implementation-cost tiers, not measured customer effort.",
+    "Removing the credential material used by this route is one modeled change, regardless of the unknown number of underlying secrets.",
+    "Endpoint access control and the two patches are modeled as removing their corresponding transitions; legitimate workload effects are untested."
+  ],
+  "omissions": [
+    "This is one narrated route, not 12 individually mapped end-to-end paths.",
+    "The execution identity is an unnamed representation of the reported Kubernetes execution context, not a named service account.",
+    "Kubernetes permission bindings and the credential store are not separately modeled; no Kubernetes permission-reduction candidate is supported.",
+    "No process escape or boundary crossing is inferred from credential exfiltration and external reuse.",
+    "The CVE identifier is not supplied and its reported year is uncertain.",
+    "Exfiltration transport and a separate database objective are not represented.",
+    "No observed or inferred substitute transitions are supplied; an empty generated queue cannot establish absence of bypasses.",
+    "Customer change count, cost, removal effects, modeled coverage, remaining access, and bypass queue are unavailable."
+  ]
+}

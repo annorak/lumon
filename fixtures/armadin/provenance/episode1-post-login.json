@@ -1,0 +1,99 @@
+{
+  "graph_id": "armadin-kcc-episode1-post-login",
+  "source": {
+    "publication": "Armadin, Kill Chains and Coffee, episode 1",
+    "url": "https://www.youtube.com/watch?v=6H07KzPNT2w",
+    "excerpts_file": "episode1-excerpts.txt"
+  },
+  "evidence": [
+    {
+      "id": "source-disclosure",
+      "location": "Supplied episode1.txt, line 1, UTF-8 byte offset 712",
+      "quotation": "On this exposed directory listing was a folder with the name DLL. It turns out that folder contained the source code for the web app.",
+      "node_ids": [],
+      "edge_ids": []
+    },
+    {
+      "id": "starting-access",
+      "location": "Supplied episode1.txt, line 1, UTF-8 byte offset 917",
+      "quotation": "We noticed there were authentication flaws and were able to log in as the admin.",
+      "node_ids": [
+        "n_post_login_access"
+      ],
+      "edge_ids": []
+    },
+    {
+      "id": "sql-injection",
+      "location": "Supplied episode1.txt, line 1, UTF-8 byte offset 998",
+      "quotation": "We noticed there was a SQL injectable endpoint and we tried to do SQL injection. We failed. It turns out there was a WAF sitting in front of it. We fingerprinted it as a Nawkami WAF and bypassed the WAF.",
+      "node_ids": [
+        "n_sql_injection"
+      ],
+      "edge_ids": [
+        "e_sql_injection"
+      ]
+    },
+    {
+      "id": "database-access",
+      "location": "Supplied episode1.txt, line 1, UTF-8 byte offset 1202",
+      "quotation": "From there, we landed in an MS SQL database and saw that we were actually over provisioned acting on behalf of the application and were able to change the configuration of the MS SQL database to flip a flag that lets us run a command called XP command shell.",
+      "node_ids": [
+        "n_database_identity"
+      ],
+      "edge_ids": [
+        "e_sql_injection",
+        "e_database_command"
+      ]
+    },
+    {
+      "id": "host-execution",
+      "location": "Supplied episode1.txt, line 1, UTF-8 byte offset 1461",
+      "quotation": "And once we did that, we ran that command and had remote code execution on the server hosting the database.",
+      "node_ids": [
+        "n_database_host_rce"
+      ],
+      "edge_ids": [
+        "e_database_command"
+      ]
+    }
+  ],
+  "validated_paths": [
+    {
+      "edge_ids": [
+        "e_sql_injection",
+        "e_database_command"
+      ],
+      "evidence_ids": [
+        "starting-access",
+        "sql-injection",
+        "database-access",
+        "host-execution"
+      ]
+    }
+  ],
+  "findings": {
+    "count": null,
+    "description": "No total finding count reported in the supplied source",
+    "evidence_ids": []
+  },
+  "customer_remediation": {
+    "reported_outcome": null,
+    "evidence_ids": [],
+    "details_status": "not_reported"
+  },
+  "assumptions": [
+    "Objective weight 5 represents assumed importance for database-host code execution; it is not customer supplied.",
+    "Candidate costs use the existing assumed implementation-cost tiers, not measured customer effort.",
+    "Patching the reported SQL injection is modeled as removing e_sql_injection.",
+    "Reducing the database identity's permissions is modeled as preventing completion of the configuration-change and command-execution sequence in e_database_command. Merely disabling a setting that the identity can enable again does not meet that removal contract. Exact grants and legitimate workload effects are untested."
+  ],
+  "omissions": [
+    "The modeled route starts with reported web access after admin login. It does not establish a full Internet-to-RCE route.",
+    "The source does not establish that authentication was required for SQL injection. Authentication flaws and source disclosure remain supporting history, not severable prerequisites.",
+    "The initial SQL-injection attempt failed. Only the successful WAF-bypassing transition is modeled; no separately patchable WAF vulnerability is established.",
+    "The database identity is unnamed. No account name, exact SQL grants, operating-system execution identity, or operating-system administrator access is inferred.",
+    "The final CAN_ACCESS edge abbreviates enabling database command execution and then using it, rather than inventing an execution-rebinding or host-escape step.",
+    "No production-data objective, total finding count, or specific customer remediation actions are established.",
+    "No observed or inferred substitute transitions are supplied."
+  ]
+}

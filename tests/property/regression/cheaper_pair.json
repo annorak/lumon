@@ -1,0 +1,8 @@
+{
+  "description": "A broken single-change-first toy chooses cost 9; the two cost-1 changes cover both paths for cost 2. This is a toy counterexample, not a discovered production bug.",
+  "rows": [[true, false], [false, true], [true, true]],
+  "costs": ["low", "low", "high"],
+  "weights": [1, 1],
+  "expected_cost": 2.0,
+  "expected_selected_ids": ["i000", "i001"]
+}
