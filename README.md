@@ -6,6 +6,10 @@ For the Fortune 600 chain reported in Armadin, Kill Chains and Coffee, episode 4
 
 ![Fortune 600 attack path, Lumon's recommendation, and modeled severance](docs/demo.png)
 
+![Constructed Fortune 600 attack graph](docs/fortune600-before.png)
+
+![Fortune 600 graph after Lumon's recommended SSRF patch](docs/fortune600-after.png)
+
 Input: A JSON graph of attacker steps reported as tested.\
 Algorithm: Find the cheapest modeled changes that sever the supplied validated paths.\
 Output: Selected changes, path coverage, and unvalidated bypass hypotheses to test.

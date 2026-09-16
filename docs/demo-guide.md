@@ -10,41 +10,10 @@ The demo command reads the public fixtures, computes the answer live, and replac
 Private transcripts are not needed. The installed demo makes no runtime network
 calls and needs no API keys, Docker, database, service account, or media tools.
 
-## Limitations
-
-- Armadin reports validating the attack. Lumon did not reproduce it. The
-  [graph](../fixtures/armadin/graphs/episode4-fortune600.json),
-  [provenance](../fixtures/armadin/provenance/episode4-fortune600.json), and
-  [approved excerpts](../fixtures/armadin/sources/episode4-excerpts.txt)
-  support one narrated route. They do not establish 12 complete paths.
-  Other episode fixtures and clearly labeled synthetic examples do not enter this headline.
-- Extraction uses a maximum depth of 12 and a maximum of 5000 paths.
-  The demo checks the extracted edge sequence against the reviewed route.
-  The exact CVE identifier, credential identities, and Kubernetes permission bindings
-  are not supplied or separately modeled.
-- Costs use assumed implementation units, with tiers of 1, 3, and 9.
-  The path's objective weight of 10 is also assumed. These are not measured customer
-  effort or customer-supplied priorities. `EXACT` proves minimum cost over the supplied
-  validated paths and candidate changes. It does not prove minimum change count,
-  unique optimality, or coverage of every conceivable fix or attack.
-- The podcast reports that the customer remediated all 12 RCE findings.
-  Its actual changes, count, cost, removal effects, modeled coverage, and remaining
-  access are unknown. A numerical comparison with the customer's actual changes is
-  unavailable. Its bypass queue is unavailable too.
-- Intervention effects are modeled edge removals. Applicability and operational side
-  effects remain untested. The selected patch leaves credential-read and authentication
-  steps in the graph; those steps do not prove a surviving complete route.
-- Bypass hypotheses are unvalidated candidates to test. This release supports entry
-  and vulnerability substitution using supplied observed or inferred transitions.
-  The Fortune 600 queue is empty because no such alternatives were supplied.
-  Empty queues and unsupported substitutions do not establish that no bypasses exist.
-- This demo-first release does not complete the original Task 10 or full Task 13.
-  Broader numeric and budgeted verification remain deferred. The budgeted solver can
-  raise at budget 0.3 when selected costs 0.1 and 0.2 sum to 0.30000000000000004.
-  Its regression remains in the complete suite; this demo does not use budgeted solving.
-- The Pareto frontier, robustness sweep, predicate normalization, LLM-assisted
-  extraction, general-purpose reporting, and full CLI remain deferred.
-  Fresh-install benchmarking is not required, and no fresh-install timing is claimed.
+The example uses the public
+[graph](../fixtures/armadin/graphs/episode4-fortune600.json),
+[source notes](../fixtures/armadin/provenance/episode4-fortune600.json), and
+[approved excerpts](../fixtures/armadin/sources/episode4-excerpts.txt).
 
 ## Why this exists
 
@@ -263,7 +232,7 @@ print(f"found {stats.path_count} validated paths")
 ## Updating the media
 
 The media tools are separate from the dependencies used to run the numeric demo.
-The PNG comes from [render_demo.py](render_demo.py); the recording commands
+All three PNGs come from [render_demo.py](render_demo.py); the recording commands
 live in [demo.tape](demo.tape).
 
 To regenerate only `docs/demo.png` from the current result:
@@ -273,20 +242,32 @@ uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \
   python -m docs.render_demo
 ```
 
-The command refuses to render if the computed result differs from the saved JSON.
-Review any result change first. It never replaces the video or GIF.
+To regenerate `docs/fortune600-before.png` and `docs/fortune600-after.png`:
 
-To check the existing PNG, video, and GIF without replacing them:
+```sh
+uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \
+  python -m docs.render_demo --graphs
+```
+
+Both graph images use the reviewed route and computed removal set. The after
+image marks the removed SSRF transition with a gap and red X. The other
+transitions remain gray. This command leaves `docs/demo.png` unchanged.
+
+The rendering commands refuse to continue if the computed result differs from
+the saved JSON. Review any result change first. Neither replaces the video or GIF.
+
+To check all three PNGs, the video, and the GIF without replacing them:
 
 ```sh
 uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \
   python -m docs.render_demo --check
 ```
 
-The checker compares the PNG with a fresh render, decodes all 2160 video frames,
-and compares every GIF frame with the corresponding video excerpt. The video is
-90 seconds at 24 frames per second. The GIF is a 20-second excerpt starting at
-13.5 seconds, at 10 frames per second.
+The checker compares each PNG with a fresh render and uses SHA-256 hashes to
+identify the exact reviewed video and GIF. It also decodes all 2160 video frames
+and all 200 GIF frames and checks their timing. The video is 90 seconds at
+24 frames per second. The GIF is a 20-second excerpt starting at 13.5 seconds,
+at 10 frames per second.
 
 ### Record a new video
 
@@ -356,13 +337,17 @@ ffmpeg -nostdin -v error -xerror -n -ss 13.5 -t 20 \
 Watch the new files before replacing `docs/demo.mp4` and `docs/demo.gif`.
 Check the visible headline, selected change, assumed cost, and `EXACT` status
 against the live result. The GIF must visibly include the command and result.
-If its timing needs to change, update the excerpt start in both the command
-and checker together, then review again.
+If the excerpt needs to start elsewhere, update its command and review again.
 
-Rerecord when the graph, result, or console output changes. Matching a GIF to
-its video does not establish that the recorded text is current. Run the checker
-again after replacing reviewed assets, and verify playback from the public README.
-The 90 seconds include reading pauses and a final still, not a runtime benchmark.
+After reviewing and replacing the recordings, run
+`shasum -a 256 docs/demo.mp4 docs/demo.gif` and update `REVIEWED_RECORDINGS`
+in `docs/render_demo.py`. Do not update hashes just to make a failed check pass.
+
+Rerecord when the graph, result, or console output changes. Matching the reviewed
+hashes confirms file identity, not whether the recorded text is current.
+Run the checker again after replacing reviewed assets, and verify playback
+from the public README. The 90 seconds include reading pauses and a final still,
+not a runtime benchmark.
 
 ## Share the result
 

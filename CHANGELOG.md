@@ -1813,3 +1813,65 @@ coverage, along with lint, formatting, strict typing, and the media checks.
   The known fractional-budget issue with costs 0.1 and 0.2 at budget 0.3 is unchanged.
 - Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
   and the full CLI remain deferred.
+
+## Task: Demo release, portable media checks and graph images
+
+_2026-09-16_
+
+**What changed in plain English**
+
+Replaced the GIF comparison that failed in Linux CI. Re-encoding the video
+excerpt made that check depend on the platform's FFmpeg build. The checker now
+identifies the exact reviewed video and GIF by their SHA-256 hashes, which are
+file fingerprints. It still decodes every frame and checks duration and timing.
+
+Added two dark-background images showing the supplied Fortune 600 route before
+and after Lumon's recommendation. Both use the same graph and computed result.
+The after image marks only the removed SSRF transition with a gap and red X.
+The remaining transitions stay visible. No branches from the reference image
+were added to the data.
+
+The README includes both images beside the existing poster and keeps the
+approved video and GIF. Removed the guide's Limitations section as requested,
+kept its source links, and documented the direct PNG-rendering command.
+No browser export or new dependency is needed.
+
+The result is unchanged: INT-003 severs the one supplied source-validated path
+at assumed cost 1, with an EXACT minimum-cost result. The podcast separately
+reports 12 RCE findings. Run `uv run --frozen python demo/run_demo.py` to reproduce it.
+All 475 tests pass locally at 99.44% coverage, along with lint, formatting,
+strict typing, and media checks.
+
+**New things you can now do**
+
+- See the constructed route and the specific link Lumon's recommendation removes.
+- Regenerate both graph PNGs with the guide's `--graphs` command.
+- Check all three PNGs against fresh renders without replacing the recordings.
+
+**Files added or changed**
+
+- `docs/render_demo.py`: renders the new graphs and checks all release media.
+- `docs/fortune600-before.png` and `docs/fortune600-after.png`: the two graph images.
+- `README.md`: embeds the new images beside the existing poster.
+- `docs/demo-guide.md`: removes the requested section and updates media instructions.
+- `tests/unit/test_demo.py`: checks all five media links and their order.
+- `CHANGELOG.md`: records this stage without changing earlier entries.
+
+**Gotchas worth knowing**
+
+- The original poster, video, GIF, saved result, and source fixtures are unchanged.
+- Recording hashes identify reviewed files; they do not prove the recorded text
+  is current. Review replacement recordings before updating their expected hashes.
+- The severance image shows modeled effects on supplied validated paths.
+  Costs and objective weights remain assumptions.
+- Generated tests search for mistakes; they are not a proof for every input.
+
+**Not done yet**
+
+- Commit and push approval, public asset checks, and a green CI run for this
+  release revision remain pending.
+- This demo-first release does not complete the original Task 10 or full Task 13.
+  Broader numeric and budgeted checks and additional bypass rules remain deferred.
+  The known fractional-budget issue with costs 0.1 and 0.2 at budget 0.3 is unchanged.
+- Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
+  and the full CLI remain deferred.
