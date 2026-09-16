@@ -127,16 +127,28 @@ def test_unknown_customer_results_are_not_an_empty_lumon_queue(result: demo.Demo
     assert result.bypass_queue.max_hypotheses == 20
     assert result.bypass_queue.selected_intervention_ids == ["INT-003"]
     assert result.bypass_queue.matrix_fingerprint == EXPECTED_FINGERPRINT
-    text = demo.render_text(result)
-    assert text.splitlines()[0] == EXPECTED_HEADLINE
-    assert "Implementation changes | unknown | 1" in text
-    assert "Cost, assumed implementation units | unknown | 1" in text
-    assert "Customer bypass queue: unavailable" in text
-    assert "Lumon bypass queue: 0 unvalidated hypotheses; truncated=False." in text
-    assert "An empty queue does not establish that no bypasses exist." in text
-    assert "numerical savings cannot be compared." in text
-    assert "minimum-cost full cover, not a Pareto frontier." in text
-    assert "known fractional-budget issue" in text
+
+
+def test_console_shows_a_compact_lumon_table(result: demo.DemoResult) -> None:
+    assert demo.render_text(result) == (
+        EXPECTED_HEADLINE
+        + "\nRepository: https://github.com/annorak/lumon"
+        + f"\nSource: {result.provenance.source.url}\n\n"
+        + """+------------------------------------+-------+
+| Metric                             | Lumon |
++------------------------------------+-------+
+| Selected changes                   |     1 |
+| Cost, assumed implementation units |     1 |
+| Supplied validated paths severed   |     1 |
+| Severed path weight, assumed       |    10 |
+| Uncovered supplied validated paths |     0 |
+| Optimality                         | EXACT |
++------------------------------------+-------+
+
+Selected changes, display order: cost ascending, individual weight descending, then ID.
+1. INT-003: Patch vulnerability n_ssrf
+   Cost: 1 assumed implementation units; supplied validated paths severed: p0000"""
+    )
 
 
 def test_repeated_commands_write_identical_results_from_public_inputs(demo_root: Path) -> None:

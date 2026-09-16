@@ -1561,3 +1561,50 @@ cost assumptions, or computed results changed.
 - Release PNG, GIF, playable 90-second video, and their regeneration sources.
 - Final README media layout, copyable share message, and media/result checks.
 - Public asset verification, successful public release CI, and its live badge.
+
+## Task: Demo release, approved video and GIF
+
+_2026-09-16_
+
+**What changed in plain English**
+
+Added the approved 90-second terminal recording and its 20-second GIF excerpt
+to `docs/`, with links and a short explanation in the README. These are exact
+copies of the compact previews reviewed by the user. Older media drafts and
+the unfinished diagram are not included in this commit.
+
+The commit also includes the compact console display, its regression test,
+and the recording script. The calculation and saved JSON are unchanged:
+one selected change severs one supplied source-validated Fortune 600 path at
+assumed cost 1. The podcast separately reports 12 RCE findings.
+
+**New things you can now do**
+
+- Watch the approved GIF and silent video from the README.
+- Run `uv run --frozen python demo/run_demo.py` for the matching compact output.
+
+**Files added or changed**
+
+- `docs/demo.mp4` and `docs/demo.gif`: the approved recording and excerpt.
+- `README.md`: links the media and describes the recorded steps.
+- `demo/run_demo.py`: prints the compact table and selected change.
+- `tests/unit/test_demo.py`: checks the compact output.
+- `docs/demo.tape`: records the real terminal commands.
+- `CHANGELOG.md`: records this media publication stage.
+
+**Gotchas worth knowing**
+
+- Reading pauses do not measure command runtime.
+- Costs and path weights remain assumptions; coverage is limited to supplied paths.
+- Generated tests search for mistakes. They do not prove correctness for every input.
+
+**Not done yet**
+
+- Finish the graph/recommendation PNG, final README layout, and media regeneration
+  and automated checks. Those unfinished drafts remain local.
+- Verify public playback and CI after pushing this commit.
+- This demo-first stage does not complete the original Task 10 or full Task 13.
+  Broader numeric and budgeted verification, additional bypass rules, and the known
+  fractional-budget issue remain deferred.
+- Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
+  and the full CLI remain deferred.

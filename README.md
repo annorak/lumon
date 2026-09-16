@@ -22,7 +22,7 @@ uv run --frozen python demo/run_demo.py
 ```
 
 The last command installs or synchronizes dependencies from `uv.lock`, computes the
-answer live, prints the headline and comparison, and writes
+answer live, prints the headline and selected changes, and writes
 [demo/output/result.json](demo/output/result.json). Repeated runs replace that file;
 the command never reads it as a cached answer.
 
@@ -252,10 +252,22 @@ Kubernetes permission bindings are not separately modeled in the Fortune 600 fix
 The bypass generator uses only supplied alternatives and requires explicit applicability
 decisions where relevant. Unsupported substitutions are not evidence of safety.
 
-The PNG, GIF, playable video, final README media layout, and public CI verification
-remain pending. Fresh-install benchmarking is not required for this release.
+The PNG, final README media layout, and public CI verification remain pending.
+Fresh-install benchmarking is not required for this release.
 The frontier, robustness sweep, predicate normalization, LLM-assisted ingestion,
 and general-purpose CLI remain deferred.
+
+## Watch the demo
+
+![Excerpt from the Fortune 600 demonstration](docs/demo.gif)
+
+[Play the 90-second video](docs/demo.mp4).
+
+The silent recording shows the reviewed Fortune 600 JSON input, runs
+`uv run --frozen python demo/run_demo.py`, and displays the selected fix,
+coverage table, and saved JSON result. The GIF is a 20-second excerpt.
+
+Reading pauses are included; the video length is not a runtime measurement.
 
 ## Library usage
 

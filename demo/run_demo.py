@@ -13,7 +13,7 @@ from lumon.hypotheses.generate import generate_hypotheses
 from lumon.interventions import synthesize
 from lumon.io import GraphInvariantError, GraphLoadError, assert_usable, load_graph
 from lumon.model import AttackGraph, EdgeType, Intervention, PathSet
-from lumon.model.hypothesis import HypothesisQueue, hypothesis_statement
+from lumon.model.hypothesis import HypothesisQueue
 from lumon.paths import extract_paths
 from lumon.solve import (
     InfeasibleError,
@@ -225,63 +225,40 @@ def compute_result(root: FilePath) -> DemoResult:
 
 def render_text(result: DemoResult) -> str:
     solution = result.solution
+    metrics = [
+        ("Metric", "Lumon"),
+        ("Selected changes", str(result.counts["M_selected_changes"])),
+        ("Cost, assumed implementation units", f"{solution.total_cost:g}"),
+        ("Supplied validated paths severed", str(len(solution.covered_path_ids))),
+        ("Severed path weight, assumed", f"{solution.covered_weight:g}"),
+        ("Uncovered supplied validated paths", str(len(solution.uncovered_path_ids))),
+        ("Optimality", solution.guarantee.value.upper()),
+    ]
+    metric_width = max(len(metric) for metric, _ in metrics)
+    value_width = max(len(value) for _, value in metrics)
+    border = f"+-{'-' * metric_width}-+-{'-' * value_width}-+"
+    table = [f"| {metric:<{metric_width}} | {value:>{value_width}} |" for metric, value in metrics]
     lines = [
         result.headline,
         f"Repository: {result.repository_url}",
         f"Source: {result.provenance.source.url}",
-        "Validated according to the source; not independently exercised by Lumon.",
         "",
-        "Metric | Customer | Lumon",
-        f"Implementation changes | unknown | {result.counts['M_selected_changes']}",
-        f"Cost, assumed implementation units | unknown | {solution.total_cost:g}",
-        f"Supplied validated paths severed | unknown | {len(solution.covered_path_ids)}",
-        f"Severed path weight, assumed | unknown | {solution.covered_weight:g}",
-        f"Uncovered supplied validated paths | unknown | {len(solution.uncovered_path_ids)}",
-        f"Optimality | unavailable | {solution.guarantee.value.upper()}",
+        border,
+        table[0],
+        border,
+        *table[1:],
+        border,
         "",
-        result.provenance.customer_remediation.reported_outcome,
-        "Customer implementation details were not reported; numerical savings cannot be compared.",
-        "",
-        "Selected changes, ordered by cost, then individually severed weight, then ID:",
+        "Selected changes, display order: cost ascending, individual weight descending, then ID.",
     ]
     for row in result.ranked_interventions:
-        lines.append(
-            f"{row.rank}. {row.intervention.id}: {row.intervention.name}; "
-            f"cost {row.cost_units:g} assumed implementation units; "
-            f"source {row.intervention.cost.source.value}; "
-            f"severs supplied validated path IDs {', '.join(row.covered_path_ids)}"
+        lines.extend(
+            [
+                f"{row.rank}. {row.intervention.id}: {row.intervention.name}",
+                f"   Cost: {row.cost_units:g} assumed implementation units; "
+                f"supplied validated paths severed: {', '.join(row.covered_path_ids)}",
+            ]
         )
-    lines.extend(
-        [
-            "This is a display order, not a solver-derived implementation priority.",
-            "The optimizer minimizes cost, not the number of changes.",
-            "Individual coverage may overlap; portfolio totals count each path once.",
-            "",
-            "Remaining modeled transitions: " + ", ".join(result.remaining_transition_ids),
-            "Remaining credential-read transitions: "
-            + ", ".join(result.remaining_credential_read_ids),
-            "Remaining credential-authentication transitions: "
-            + ", ".join(result.remaining_credential_authentication_ids),
-            "Kubernetes permission bindings are not separately modeled.",
-            "Remaining transitions do not prove a surviving entry-to-objective route.",
-            "",
-            "Customer bypass queue: unavailable because implementation details were not reported.",
-            f"Lumon bypass queue: {len(result.bypass_queue.hypotheses)} unvalidated hypotheses; "
-            f"truncated={result.bypass_queue.truncated}.",
-            "An empty queue does not establish that no bypasses exist.",
-            *[hypothesis_statement(item) for item in result.bypass_queue.hypotheses],
-            "",
-            "Assumptions:",
-            *[f"- {item}" for item in result.provenance.assumptions],
-            "Source and modeling limits:",
-            *[f"- {item}" for item in result.provenance.omissions],
-            "",
-            "This demo uses minimum-cost full cover, not a Pareto frontier.",
-            "Broader numeric and budgeted verification, including the known fractional-budget "
-            "issue, remain deferred.",
-            f"Input fingerprint: {result.matrix_fingerprint}",
-        ]
-    )
     return "\n".join(lines)
 
 
