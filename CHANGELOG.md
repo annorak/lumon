@@ -1562,6 +1562,118 @@ cost assumptions, or computed results changed.
 - Final README media layout, copyable share message, and media/result checks.
 - Public asset verification, successful public release CI, and its live badge.
 
+## Task: Demo release, silent media and README
+
+_2026-09-15_
+
+**What changed in plain English**
+
+Added an image, a short GIF, and a 90-second silent replay of the Fortune 600
+demonstration. The user chose no narration or subtitles. The README explains
+what appears at each point in the video and puts the result, image, command,
+and limitations in the requested order.
+
+The media authoring script checks a fresh computation against the reviewed
+result, captures the real demo command's output, and uses those values in the
+images. The result remains one supplied source-validated path, one selected
+change, and 12 separately reported RCE findings. INT-003 removes the modeled
+SSRF transition at an assumed cost of 1. EXACT establishes minimum cost over
+the supplied paths and changes, not minimum change count or a unique answer.
+
+Media checks compare the PNG and GIF with fresh renderings, decode the whole
+video, and compare a frame from each scene. CI runs those checks alongside
+the existing tests and type checks. Generated solver tests still search for
+mistakes across many inputs; they do not prove correctness for every input.
+
+**New things you can now do**
+
+- Run the unchanged numeric demo with `uv run --frozen python demo/run_demo.py`.
+- Regenerate or check the release media with the commands in the README.
+- Read the explanation beside the silent video and copy the share message.
+
+**Files added or changed**
+
+- `docs/render_demo.py`: authors and checks the fixed demonstration media.
+- `docs/demo.png`, `docs/demo.gif`, `docs/demo.mp4`: generated release assets.
+- `README.md`: media, limitations, regeneration commands, and share message.
+- `tests/unit/test_demo.py`: checks asset links, README order, and share text.
+- `.github/workflows/ci.yml`: checks media source types and actual asset files.
+- `CHANGELOG.md`: records this stage and the remaining release checks.
+
+**Gotchas worth knowing**
+
+- Authoring tools are installed separately from the numeric demo's dependencies.
+- The video is a paced replay. Its scene timings do not measure command runtime.
+- Video comparisons allow compression differences and do not replace visual review.
+- Only approved source excerpts and the reviewed graph appear in the media.
+- Customer changes, costs, coverage, remaining access, and bypass queue are unknown.
+  A numerical comparison with the customer's actual changes is unavailable.
+- Lumon's empty queue does not establish that no bypasses exist. Remaining credential
+  transitions do not establish a complete surviving route. Side effects remain untested.
+
+**Not done yet**
+
+- Confirm playback from the public README and verify public access to the assets.
+- Obtain separate commit and push approval, then check CI for that release revision.
+  The badge follows the public master branch, not unpublished local work.
+- This demo-first work does not complete the original Task 10 or full Task 13.
+  Broader numeric and budgeted checks and additional bypass rules remain deferred.
+  The known 0.1 + 0.2 budget issue is unchanged and its regression still runs.
+- Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
+  and the full CLI remain deferred.
+
+## Task: Demo release, compact terminal previews
+
+_2026-09-16_
+
+**What changed in plain English**
+
+The demo now prints a bordered Lumon-only table and the selected change.
+The customer column and longer explanatory sections no longer fill the
+terminal. The full evidence, assumptions, customer unknowns, and generated
+bypass queue remain in the saved JSON.
+
+Recorded new silent video and GIF previews from the real demo command.
+The results fit on one screen without scrolling. The video lasts 90 seconds;
+the GIF is a 20-second excerpt. Both files were decoded completely and
+sampled frames were inspected for readable text and correct values.
+
+The calculation is unchanged: one selected change severs the one supplied
+source-validated Fortune 600 path at assumed cost 1. The podcast separately
+reports 12 RCE findings. All 475 tests and strict type checks pass, and the
+saved result is byte-for-byte unchanged.
+
+**New things you can now do**
+
+- Run `uv run --frozen python demo/run_demo.py` for the compact result table.
+- Watch the new local recording previews without narration or captions.
+
+**Files added or changed**
+
+- `demo/run_demo.py`: shortens console output without changing computation.
+- `tests/unit/test_demo.py`: checks the exact compact display.
+- `docs/demo.tape`: records the compact output without unnecessary scrolling.
+- `.private/demo-release/terminal-compact.mp4` and `terminal-compact.gif`:
+  local previews excluded from Git.
+- `CHANGELOG.md`: records this reviewed stage.
+
+**Gotchas worth knowing**
+
+- Removing console text does not remove the corresponding JSON data.
+- The recording includes reading pauses; its duration is not a runtime benchmark.
+- Generated tests search for mistakes. They do not prove correctness for every input.
+
+**Not done yet**
+
+- Replace the legacy slideshow checker and public media, update the README,
+  and finish the graph/recommendation PNG in separately reviewed changes.
+- Obtain commit and push approval, then verify public playback and release CI.
+- This demo-first stage does not complete the original Task 10 or full Task 13.
+  Broader numeric and budgeted checks, additional bypass rules, and the known
+  fractional-budget issue remain deferred.
+- Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
+  and the full CLI remain deferred.
+
 ## Task: Demo release, approved video and GIF
 
 _2026-09-16_
@@ -1606,5 +1718,98 @@ assumed cost 1. The podcast separately reports 12 RCE findings.
 - This demo-first stage does not complete the original Task 10 or full Task 13.
   Broader numeric and budgeted verification, additional bypass rules, and the known
   fractional-budget issue remain deferred.
+- Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
+  and the full CLI remain deferred.
+
+## Task: Demo release, before-and-after diagram
+
+_2026-09-16_
+
+**What changed in plain English**
+
+The PNG now shows the supplied Fortune 600 kill chain beside the same graph
+with Lumon's selected change applied. A small table identifies the change,
+its assumed cost, and the supplied path it severs.
+
+Both panels use one drawing function and the same computed result. The
+after panel breaks only the SSRF transition removed by INT-003. The other
+transitions remain visible. Vulnerabilities label the transitions they
+enable; they are not added as extra steps in the attack.
+
+**New things you can now do**
+
+- See the recommended change and exactly where it breaks the supplied route.
+
+**Files added or changed**
+
+- `docs/render_demo.py`: draws the two graph panels and recommendation table.
+- `docs/demo.png`: the local before-and-after diagram.
+- `CHANGELOG.md`: records this diagram update.
+
+**Gotchas worth knowing**
+
+- The after panel shows modeled removal effects, not an independently tested fix.
+- The result remains one selected change, assumed cost 1, and one supplied
+  source-validated path severed. The podcast separately reports 12 RCE findings.
+- The solver, fixtures, saved JSON, approved video, and GIF are unchanged.
+
+**Not done yet**
+
+- Replace the rejected slideshow entry point and its checks in a separate change.
+  This update uses only the PNG-rendering function.
+- Final README integration and publication of the updated PNG remain pending.
+- The original Task 10, full Task 13, and other previously deferred work remain deferred.
+
+## Task: Demo release, media checks and simpler documentation
+
+_2026-09-16_
+
+**What changed in plain English**
+
+Removed the old slideshow code. The media command now regenerates only the
+before-and-after PNG. Its check mode verifies the PNG against the live result,
+decodes the complete 90-second recording, and checks all 200 GIF frames against
+the matching video excerpt. It never replaces the approved recordings.
+
+The README now focuses on running and watching the demo, with the final PNG,
+video, and GIF together. It also explains the name's connection to Severance.
+The longer evidence notes, model explanation, and development commands moved
+into a linked guide, along with instructions for updating the media.
+
+The calculation is unchanged. One selected change severs the one supplied
+source-validated Fortune 600 path at assumed cost 1 and assumed path weight 10.
+The podcast separately reports 12 RCE findings. All 475 tests pass at 99.44%
+coverage, along with lint, formatting, strict typing, and the media checks.
+
+**New things you can now do**
+
+- Follow a short README to run the demo and watch the approved recordings.
+- Check the shipped media and follow the guide to make a new recording.
+
+**Files added or changed**
+
+- `docs/render_demo.py`: renders only the PNG and checks the final recordings.
+- `README.md`: shortens the introduction and links the final media and guide.
+- `docs/demo-guide.md`: preserves the detailed notes and records the media workflow.
+- `tests/unit/test_demo.py`: checks the guide link and relocated share message.
+- `CHANGELOG.md`: records this reviewed stage.
+
+**Gotchas worth knowing**
+
+- The approved PNG, video, GIF, and saved result remain byte-for-byte unchanged.
+- Media tools remain separate from the numeric demo's runtime dependencies.
+- A GIF matching its video does not establish that the recorded text is current.
+  Review the visible result again after changing the graph or console output.
+- Generated tests search for mistakes; they do not prove correctness for every input.
+- Customer implementation details remain unknown. The empty Fortune 600 bypass
+  queue does not establish that no bypasses exist.
+
+**Not done yet**
+
+- Commit and push approval, public playback checks, and green CI for the final
+  release revision remain pending.
+- This demo-first release does not complete the original Task 10 or full Task 13.
+  Broader numeric and budgeted checks and additional bypass rules remain deferred.
+  The known fractional-budget issue with costs 0.1 and 0.2 at budget 0.3 is unchanged.
 - Frontier, robustness, normalization, LLM-assisted extraction, general reporting,
   and the full CLI remain deferred.

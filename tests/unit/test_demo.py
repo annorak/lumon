@@ -358,3 +358,30 @@ def test_mismatched_graph_provenance_is_rejected(
     graph_file.write_text(json.dumps(fields), encoding="utf-8")
 
     _assert_failed_main(demo_root, capsys, explanation)
+
+
+def test_readme_links_release_media_in_the_required_order(result: demo.DemoResult) -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assets = ("docs/demo.png", "docs/demo.gif", "docs/demo.mp4")
+    for asset in assets:
+        assert asset in readme
+        assert (ROOT / asset).is_file()
+
+    markers = (
+        result.headline,
+        assets[0],
+        "uv run --frozen python demo/run_demo.py",
+        assets[1],
+        assets[2],
+    )
+    positions = [readme.index(marker) for marker in markers]
+    assert positions == sorted(positions)
+    explanation = readme.split("](docs/demo.png)", 1)[1].split("## Run the demo", 1)[0]
+    lines = explanation.strip().splitlines()
+    assert len(lines) == 3
+    for line, prefix in zip(lines, ("Input:", "Algorithm:", "Output:"), strict=True):
+        assert line.startswith(prefix)
+    assert "](docs/demo-guide.md)" in readme
+    assert "https://en.wikipedia.org/wiki/Severance_(TV_series)" in readme
+    guide = (ROOT / "docs/demo-guide.md").read_text(encoding="utf-8")
+    assert f"```text\n{result.headline}\n\n{result.repository_url}\n```" in guide

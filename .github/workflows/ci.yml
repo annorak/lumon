@@ -27,3 +27,8 @@ jobs:
 
       - name: Run live demo
         run: uv run --frozen python demo/run_demo.py
+
+      - name: Check media source and release artifacts
+        run: |
+          uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 python -m mypy --strict src docs/render_demo.py
+          uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 python -m docs.render_demo --check
