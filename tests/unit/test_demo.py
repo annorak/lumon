@@ -27,6 +27,7 @@ from lumon.solve import (
 from tests.brute_force import brute_force_min_cost_cover
 
 ROOT = Path(__file__).resolve().parents[2]
+EPISODE_LINK = "[episode 4](https://www.youtube.com/watch?v=RxLj-4BsYhg&t=2s)"
 EXPECTED_HEADLINE = (
     "For the Fortune 600 chain reported in Armadin, Kill Chains and Coffee, episode 4, "
     "Lumon selects 1 modeled change at minimum cost to sever the 1 supplied "
@@ -128,7 +129,7 @@ def test_readme_and_saved_result_match_the_live_result(
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert readme.split("\n\n", 3)[:3] == [
         "# Lumon",
-        EXPECTED_HEADLINE,
+        EXPECTED_HEADLINE.replace("episode 4", EPISODE_LINK),
         EXPECTED_CONSTRUCTED_HEADLINE,
     ]
     assert f"[Repository]({result.repository_url})" in readme
@@ -406,6 +407,21 @@ def test_mismatched_graph_provenance_is_rejected(
     _assert_failed_main(demo_root, capsys, explanation)
 
 
+def test_readme_links_episode_and_preserves_requested_copy() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert readme.count(EPISODE_LINK) == 4
+    assert "episode 4" not in readme.replace(EPISODE_LINK, "")
+    description = readme.split("## Generated example\n\n", 1)[1].split("\n\n", 1)[0]
+    assert description == (
+        "This is a generated example to showcase the capabilities of Lumon (not real attack "
+        "from killchains and cofee series). Five entry points feed 40 paths through one shared "
+        "service. Lumon picks one access-control change at that service to sever all 40 paths "
+        "marked validated."
+    )
+    assert "Dependencies may need internet to download." not in readme
+    assert "without API keys, Docker, or external services." not in readme
+
+
 def test_readme_links_release_media_in_the_required_order(result: demo.DemoResult) -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assets = (
@@ -421,9 +437,9 @@ def test_readme_links_release_media_in_the_required_order(result: demo.DemoResul
         assert (ROOT / asset).is_file()
 
     markers = (
-        result.headline,
+        result.headline.replace("episode 4", EPISODE_LINK),
         EXPECTED_CONSTRUCTED_HEADLINE,
-        "## Armadin: episode 4",
+        f"## Armadin: {EPISODE_LINK}",
         *assets[:2],
         "## Generated example",
         *assets[2:4],

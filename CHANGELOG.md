@@ -1549,3 +1549,27 @@ generated example. The existing images, GIF, video, and numeric results are unch
 **Not done yet**
 
 - A recording of the constructed case is not included.
+
+## README source links and wording
+
+**What changed in plain English**
+
+Every Episode 4 reference in the README now links to the supplied video.
+Readers can open the source from the headline, diagram section, or recording description.
+
+The generated-example paragraph now uses the requested wording exactly.
+Removed the paragraph about dependency downloads and runtime services.
+
+**New things you can now do**
+
+- Open Episode 4 directly from each README reference.
+
+**Files added or changed**
+
+- `README.md`: adds the links and requested text changes.
+- `tests/unit/test_demo.py`: checks the links and exact wording while preserving headline checks.
+- `CHANGELOG.md`: records this update.
+
+**Not done yet**
+
+- Nothing remains for this README update. Demo logic and media are unchanged.
