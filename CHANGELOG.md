@@ -1520,3 +1520,32 @@ preserve the previous output.
 
 - Publication and public CI for this revision require separate approval.
 - New media for the constructed case and additional bypass rules are not included.
+
+## Constructed graph diagrams
+
+**What changed in plain English**
+
+Added before/after diagrams for the generated REALISTIC example in the same dark
+style as the Fortune 600 pair. They show how one access-control change removes
+five entry links and severs all 40 paths marked validated. Observed and inferred
+edges are left out of both views and labeled as such.
+
+The README separates the Armadin episode 4 diagrams and recording from the
+generated example. The existing images, GIF, video, and numeric results are unchanged.
+
+**New things you can now do**
+
+- See the shared fix in the generated graph, not just its result table.
+- Regenerate and check all four diagrams with the existing media commands.
+
+**Files added or changed**
+
+- `docs/realistic-before.png` and `docs/realistic-after.png`: new generated-case diagrams.
+- `docs/render_demo.py`: shares drawing styles and renders and checks both pairs.
+- `README.md` and `docs/demo-guide.md`: explain which media belongs to each case.
+- `tests/unit/test_demo.py`: checks the two case sections and six media links in order.
+- `CHANGELOG.md`: records the diagram addition.
+
+**Not done yet**
+
+- A recording of the constructed case is not included.

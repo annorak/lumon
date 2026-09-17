@@ -411,6 +411,8 @@ def test_readme_links_release_media_in_the_required_order(result: demo.DemoResul
     assets = (
         "docs/fortune600-before.png",
         "docs/fortune600-after.png",
+        "docs/realistic-before.png",
+        "docs/realistic-after.png",
         "docs/demo.gif",
         "docs/demo.mp4",
     )
@@ -421,15 +423,19 @@ def test_readme_links_release_media_in_the_required_order(result: demo.DemoResul
     markers = (
         result.headline,
         EXPECTED_CONSTRUCTED_HEADLINE,
+        "## Armadin: episode 4",
         *assets[:2],
+        "## Generated example",
+        *assets[2:4],
         "uv run --frozen python demo/run_demo.py",
-        *assets[2:],
+        *assets[4:],
     )
     positions = [readme.index(marker) for marker in markers]
     assert positions == sorted(positions)
-    explanation = readme.split("](docs/fortune600-after.png)", 1)[1].split("## Run the demo", 1)[0]
+    explanation = readme.split("](docs/realistic-after.png)", 1)[1].split("## Run the demo", 1)[0]
     lines = explanation.strip().splitlines()
     assert len(lines) == 3
+    assert lines[0] == "Input: A JSON graph of attacker steps reported as tested.\\"
     for line, prefix in zip(lines, ("Input:", "Algorithm:", "Output:"), strict=True):
         assert line.startswith(prefix)
     assert "](docs/demo-guide.md)" in readme

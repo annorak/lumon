@@ -37,7 +37,8 @@ The result does not establish that no bypasses exist.
 The JSON keeps Episode 4's fields at the top level and puts the constructed
 summary under `constructed_case`, including the preset parameters needed to
 regenerate the graph. Source findings and customer history belong only to Episode 4.
-The diagrams and recordings still show that source-backed case.
+The README has a before/after diagram pair for each case. The GIF and video
+show only the source-backed Episode 4 case.
 
 ## Why this exists
 
@@ -257,24 +258,30 @@ print(f"found {stats.path_count} validated paths")
 ## Updating the media
 
 The media tools are separate from the dependencies used to run the numeric demo.
-Both PNGs come from [render_demo.py](render_demo.py); the recording commands
+All four PNGs come from [render_demo.py](render_demo.py); the recording commands
 live in [demo.tape](demo.tape).
 
-To regenerate `docs/fortune600-before.png` and `docs/fortune600-after.png`:
+To regenerate both diagram pairs (`docs/fortune600-{before,after}.png` and
+`docs/realistic-{before,after}.png`):
 
 ```sh
 uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \
   python -m docs.render_demo
 ```
 
-Both graph images use the reviewed route and computed removal set. The after
-image marks the removed SSRF transition with a gap and red X. The other
-transitions remain gray.
+The Fortune 600 pair uses the reviewed Episode 4 route and computed removal set.
+Its after image marks the removed SSRF transition with a gap and red X.
+
+The REALISTIC pair regenerates the graph from the computed result's parameters.
+It shows the 15 transitions marked validated that form the 40 constructed paths.
+Its after image marks the five entry links removed by the access-control change.
+The three observed and two inferred edges are omitted from both views, not removed
+by the fix. Both pairs keep the other displayed transitions gray after the change.
 
 The rendering command refuses to continue if the computed result differs from
 the saved JSON. Review any result change first. It never replaces the video or GIF.
 
-To check both PNGs, the video, and the GIF without replacing them:
+To check all four PNGs, the video, and the GIF without replacing them:
 
 ```sh
 uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \

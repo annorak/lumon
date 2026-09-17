@@ -6,9 +6,24 @@ Constructed REALISTIC graph: 40 paths marked validated, 1 change, cost 1 assumed
 
 [Repository](https://github.com/annorak/lumon) · [![CI](https://github.com/annorak/lumon/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/annorak/lumon/actions/workflows/ci.yml?query=branch%3Amaster)
 
+## Armadin: episode 4
+
+These two diagrams show the Fortune 600 chain reported in Armadin's
+*Kill Chains and Coffee*, episode 4, before and after Lumon's suggested SSRF patch.
+
 ![Constructed Fortune 600 attack graph](docs/fortune600-before.png)
 
 ![Fortune 600 graph after Lumon's recommended SSRF patch](docs/fortune600-after.png)
+
+## Generated example
+
+This is a generated example, not an Armadin attack. Five entry points feed
+40 paths through one shared service. Lumon picks one access-control change
+at that service to sever all 40 paths marked validated.
+
+![Generated REALISTIC graph with 40 paths through one shared service](docs/realistic-before.png)
+
+![Generated REALISTIC graph after Lumon's shared access-control change](docs/realistic-after.png)
 
 Input: A JSON graph of attacker steps reported as tested.\
 Algorithm: Find the cheapest modeled changes that sever the supplied validated paths.\
@@ -38,8 +53,8 @@ without API keys, Docker, or external services.
 
 [Play the 90-second video](docs/demo.mp4).
 
-The images and silent recording show the Episode 4 case. The recording shows its
-input graph, selected change, and saved result, with pauses for reading.
+The GIF and silent video show the Armadin case from *Kill Chains and Coffee*,
+episode 4: its input graph, selected change, and saved result.
 Run the command above for both cases.
 
 ## Why Lumon?

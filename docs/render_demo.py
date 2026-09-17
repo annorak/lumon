@@ -7,10 +7,22 @@ from hashlib import file_digest
 from pathlib import Path
 
 import imageio_ffmpeg  # type: ignore[import-untyped]
-from demo.run_demo import DemoResult, compute_constructed_result, compute_result, serialize_result
+from demo.run_demo import (
+    ConstructedResult,
+    DemoResult,
+    compute_constructed_result,
+    compute_result,
+    serialize_result,
+)
 from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageSequence
 
+from lumon.generate import generate
+from lumon.model import AttackGraph, NodeType
+
 ROOT = Path(__file__).resolve().parents[1]
+GRAPH_SIZE = (2160, 960)
+GRAPH_BACKGROUND = "#181818"
+RED, WHITE, GRAY = "#ED2336", "#E5E5E5", "#9B9B9B"
 VIDEO_SIZE = (1800, 1080)
 VIDEO_SECONDS = 90
 VIDEO_FPS = 24
@@ -79,6 +91,38 @@ def draw_graph_link(
         draw.polygon(((x - 12, y - 7), (x, y), (x - 12, y + 7)), fill=color)
 
 
+def draw_graph_node(
+    draw: ImageDraw.ImageDraw, node_type: NodeType, x: int, y: int, color: str
+) -> None:
+    if node_type is NodeType.ENTRY_POINT:
+        draw.ellipse((x - 24, y - 24, x + 24, y + 24), outline=color, width=3)
+        draw.ellipse((x - 10, y - 24, x + 10, y + 24), outline=color, width=2)
+        draw.line((x - 24, y, x + 24, y), fill=color, width=2)
+    elif node_type is NodeType.OBJECTIVE:
+        draw.polygon(
+            (
+                (x - 26, y - 26),
+                (x + 26, y - 26),
+                (x + 22, y + 12),
+                (x, y + 30),
+                (x - 22, y + 12),
+            ),
+            outline=color,
+            width=3,
+        )
+    else:
+        draw.polygon(
+            (
+                (x - 27, y - 18),
+                (x + 15, y - 18),
+                (x + 27, y - 6),
+                (x + 27, y + 18),
+                (x - 27, y + 18),
+            ),
+            fill=color,
+        )
+
+
 def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
     (path,) = result.paths.paths
     (selected,) = result.ranked_interventions
@@ -87,24 +131,23 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
     removed_ids = set(result.removed_transition_ids) if is_severed else set()
     coordinates = ((180, 450), (540, 490), (900, 430), (1260, 480), (1620, 440), (1980, 475))
     positions = dict(zip(path.node_ids, coordinates, strict=True))
-    image = Image.new("RGB", (2160, 960), "#181818")
+    image = Image.new("RGB", GRAPH_SIZE, GRAPH_BACKGROUND)
     draw = ImageDraw.Draw(image)
-    red, white, gray = "#ED2336", "#E5E5E5", "#9B9B9B"
-    route_color = gray if is_severed else red
+    route_color = GRAY if is_severed else RED
     title = (
         f"Fortune 600 / After modeled application of {selected.intervention.id}"
         if is_severed
         else "Fortune 600 / Constructed attack graph"
     )
-    draw_text(image, (64, 56), title, size=40, color=white)
-    draw_text(image, (64, 118), "Armadin / Kill Chains and Coffee / Episode 4", size=26, color=gray)
+    draw_text(image, (64, 56), title, size=40, color=WHITE)
+    draw_text(image, (64, 118), "Armadin / Kill Chains and Coffee / Episode 4", size=26, color=GRAY)
 
     for edge_id in path.edge_ids:
         edge = edges[edge_id]
         start_x, start_y = positions[edge.source]
         end_x, end_y = positions[edge.target]
         is_removed = edge_id in removed_ids
-        color = red if is_removed else route_color
+        color = RED if is_removed else route_color
         draw_graph_link(draw, (start_x + 30, start_y), (end_x - 30, end_y), color, is_removed)
         label = (
             nodes[edge.enabled_by].label if edge.enabled_by else TRANSITION_LABELS[edge.type.value]
@@ -129,36 +172,10 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
             f"{index + 1}. {node.label}",
             size=30,
             columns=22,
-            color=white,
+            color=WHITE,
         )
         draw.line((x, 374, x, y - 32), fill="#555555", width=2)
-        if node.type.value == "entry_point":
-            draw.ellipse((x - 24, y - 24, x + 24, y + 24), outline=route_color, width=3)
-            draw.ellipse((x - 10, y - 24, x + 10, y + 24), outline=route_color, width=2)
-            draw.line((x - 24, y, x + 24, y), fill=route_color, width=2)
-        elif node.type.value == "objective":
-            draw.polygon(
-                (
-                    (x - 26, y - 26),
-                    (x + 26, y - 26),
-                    (x + 22, y + 12),
-                    (x, y + 30),
-                    (x - 22, y + 12),
-                ),
-                outline=route_color,
-                width=3,
-            )
-        else:
-            draw.polygon(
-                (
-                    (x - 27, y - 18),
-                    (x + 15, y - 18),
-                    (x + 27, y - 6),
-                    (x + 27, y + 18),
-                    (x - 27, y + 18),
-                ),
-                fill=route_color,
-            )
+        draw_graph_node(draw, node.type, x, y, route_color)
 
     draw.line((64, 784, 2096, 784), fill="#444444", width=2)
     if is_severed:
@@ -167,7 +184,7 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
             (64, 810),
             f"{selected.intervention.id}: {selected.intervention.name}",
             size=32,
-            color=white,
+            color=WHITE,
         )
         draw_text(
             image,
@@ -176,7 +193,7 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
             f"supplied validated paths severed / Cost: {selected.cost_units:g} assumed "
             f"implementation unit / {result.solution.guarantee.value.upper()} minimum cost",
             size=26,
-            color=white,
+            color=WHITE,
         )
     else:
         draw_text(
@@ -184,7 +201,7 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
             (64, 810),
             f"Supplied source-validated paths: {len(result.paths.paths)}",
             size=32,
-            color=white,
+            color=WHITE,
         )
     draw_text(
         image,
@@ -193,16 +210,111 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
         if is_severed
         else "Red: source-validated route.",
         size=20,
-        color=gray,
+        color=GRAY,
     )
     return image
 
 
-def verify_media(result: DemoResult, directory: Path) -> None:
-    for name, expected in (
-        ("fortune600-before.png", render_graph(result, False)),
-        ("fortune600-after.png", render_graph(result, True)),
-    ):
+def render_constructed_graph(
+    graph: AttackGraph, result: ConstructedResult, is_severed: bool
+) -> Image.Image:
+    (selected,) = result.ranked_interventions
+    removed_ids = selected.intervention.removes_edge_ids if is_severed else frozenset()
+    # Fixed layout for the reviewed REALISTIC preset: x, y, label y.
+    positions = {
+        **{
+            f"n_entry_{index:02d}": (180, 270 + index * 100, 212 + index * 100)
+            for index in range(5)
+        },
+        "n_choke_l1": (630, 480, 222),
+        "n_l2_00": (1080, 330, 222),
+        "n_l2_01": (1080, 630, 690),
+        "n_l3_00": (1530, 330, 222),
+        "n_l3_01": (1530, 630, 690),
+        "n_obj_00": (1980, 330, 222),
+        "n_obj_01": (1980, 630, 690),
+    }
+    if positions.keys() != {node.id for node in graph.nodes}:
+        raise ValueError("The constructed graph no longer matches the reviewed layout.")
+    image = Image.new("RGB", GRAPH_SIZE, GRAPH_BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    route_color = GRAY if is_severed else RED
+    title = (
+        f"Generated example / After modeled application of {selected.intervention.id}"
+        if is_severed
+        else "Generated example / Constructed attack graph"
+    )
+    draw_text(image, (64, 56), title, size=40, color=WHITE)
+    draw_text(
+        image,
+        (64, 118),
+        f"Synthetic / {result.preset} preset / Seed {result.generator_params.seed}"
+        " / Validated-transition view",
+        size=26,
+        color=GRAY,
+    )
+    for edge in graph.validated_edges():
+        start_x, start_y, _ = positions[edge.source]
+        end_x, end_y, _ = positions[edge.target]
+        is_removed = edge.id in removed_ids
+        draw_graph_link(
+            draw,
+            (start_x + 30, start_y),
+            (end_x - 30, end_y),
+            RED if is_removed else route_color,
+            is_removed,
+        )
+    for node in graph.nodes:
+        x, y, label_y = positions[node.id]
+        label = node.label
+        if node.id == selected.intervention.target_node_id:
+            label += f"\n{node.id}"
+        draw_text(image, (x - 144, label_y), label, size=30, columns=24, color=WHITE)
+        draw_graph_node(draw, node.type, x, y, route_color)
+
+    draw.line((64, 784, 2096, 784), fill="#444444", width=2)
+    if is_severed:
+        draw_text(
+            image,
+            (64, 810),
+            f"{selected.intervention.id}: {selected.intervention.name}",
+            size=32,
+            color=WHITE,
+        )
+        summary = (
+            f"{len(result.solution.covered_path_ids)}/{result.validated_path_count}"
+            " constructed validated paths severed"
+            f" / Cost: {selected.cost_units:g} assumed implementation unit"
+            f" / {result.solution.guarantee.value.upper()} minimum cost"
+        )
+    else:
+        draw_text(
+            image,
+            (64, 810),
+            f"{result.validated_path_count} generated paths marked validated"
+            f" / {result.candidate_count} candidate changes",
+            size=32,
+            color=WHITE,
+        )
+        summary = "Every displayed route passes through the shared service."
+    draw_text(image, (64, 862), summary, size=26, color=WHITE)
+    legend = (
+        "Gray: retained transitions. Red X: modeled removal."
+        if is_severed
+        else "Red: generated transitions marked validated."
+    )
+    draw_text(
+        image,
+        (64, 900),
+        f"{legend} Observed and inferred edges not shown.",
+        size=20,
+        color=GRAY,
+    )
+    return image
+
+
+def verify_media(images: dict[str, Image.Image], directory: Path) -> None:
+    for name, expected in images.items():
         with Image.open(directory / name) as image:
             if image.format != "PNG" or image.size != expected.size:
                 raise ValueError(f"{name}: expected a full-size PNG release image.")
@@ -269,16 +381,24 @@ def main() -> None:
     )
     args = parser.parse_args()
     result = compute_result(ROOT)
+    constructed = compute_constructed_result()
     saved = ROOT / "demo/output/result.json"
-    if serialize_result(result, compute_constructed_result()) != saved.read_text(encoding="utf-8"):
+    if serialize_result(result, constructed) != saved.read_text(encoding="utf-8"):
         raise ValueError("The live result differs from the reviewed artifact. Review it first.")
+    graph, _ = generate(constructed.generator_params)
+    images = {
+        "fortune600-before.png": render_graph(result, False),
+        "fortune600-after.png": render_graph(result, True),
+        "realistic-before.png": render_constructed_graph(graph, constructed, False),
+        "realistic-after.png": render_constructed_graph(graph, constructed, True),
+    }
     directory = ROOT / "docs"
     if args.check:
-        verify_media(result, directory)
+        verify_media(images, directory)
         print("PNGs and recordings checked. Playback review is still required.")
     else:
-        for name, is_severed in (("before", False), ("after", True)):
-            render_graph(result, is_severed).save(directory / f"fortune600-{name}.png")
+        for name, image in images.items():
+            image.save(directory / name)
         print("Graph PNGs rendered. The video and GIF were not changed.")
 
 
