@@ -8,6 +8,164 @@
     ],
     "truncated": false
   },
+  "constructed_case": {
+    "bypass_queue": {
+      "hypotheses": [],
+      "matrix_fingerprint": "d6a4cd1c289f8ebee341151921399e9f96557a0ba39c277924e49a3213f1d4dc",
+      "max_hypotheses": 20,
+      "selected_intervention_ids": [
+        "INT-000"
+      ],
+      "truncated": false
+    },
+    "candidate_count": 7,
+    "evidence_basis": "constructed",
+    "extraction_limits": {
+      "max_depth": 12,
+      "max_paths": 5000
+    },
+    "generator_params": {
+      "branching": 2,
+      "depth": 3,
+      "inferred_edge_ratio": 0.1,
+      "n_entry_points": 5,
+      "n_objectives": 2,
+      "n_planted_chokepoints": 1,
+      "objective_weight_range": [
+        1,
+        10
+      ],
+      "observed_edge_ratio": 0.2,
+      "seed": 4
+    },
+    "graph_id": "synthetic-45a38548",
+    "headline": "Constructed REALISTIC graph: 40 paths marked validated, 1 change, cost 1 assumed implementation unit. Lumon proves this is the minimum cost to sever all 40 paths using the 7 modeled candidates.",
+    "preset": "REALISTIC",
+    "ranked_interventions": [
+      {
+        "cost_units": 1.0,
+        "covered_path_ids": [
+          "p0000",
+          "p0001",
+          "p0002",
+          "p0003",
+          "p0004",
+          "p0005",
+          "p0006",
+          "p0007",
+          "p0008",
+          "p0009",
+          "p0010",
+          "p0011",
+          "p0012",
+          "p0013",
+          "p0014",
+          "p0015",
+          "p0016",
+          "p0017",
+          "p0018",
+          "p0019",
+          "p0020",
+          "p0021",
+          "p0022",
+          "p0023",
+          "p0024",
+          "p0025",
+          "p0026",
+          "p0027",
+          "p0028",
+          "p0029",
+          "p0030",
+          "p0031",
+          "p0032",
+          "p0033",
+          "p0034",
+          "p0035",
+          "p0036",
+          "p0037",
+          "p0038",
+          "p0039"
+        ],
+        "covered_weight": 140.0,
+        "intervention": {
+          "cost": {
+            "justification": "usually config, but can break callers",
+            "source": "assumed_default",
+            "tier": "low"
+          },
+          "id": "INT-000",
+          "intervention_class": "access_control_add",
+          "name": "Add access control at n_choke_l1",
+          "notes": null,
+          "removes_edge_ids": [
+            "e_0000",
+            "e_0001",
+            "e_0002",
+            "e_0003",
+            "e_0004"
+          ],
+          "side_effects_declared": false,
+          "target_node_id": "n_choke_l1"
+        },
+        "rank": 1
+      }
+    ],
+    "solution": {
+      "covered_path_ids": [
+        "p0000",
+        "p0001",
+        "p0002",
+        "p0003",
+        "p0004",
+        "p0005",
+        "p0006",
+        "p0007",
+        "p0008",
+        "p0009",
+        "p0010",
+        "p0011",
+        "p0012",
+        "p0013",
+        "p0014",
+        "p0015",
+        "p0016",
+        "p0017",
+        "p0018",
+        "p0019",
+        "p0020",
+        "p0021",
+        "p0022",
+        "p0023",
+        "p0024",
+        "p0025",
+        "p0026",
+        "p0027",
+        "p0028",
+        "p0029",
+        "p0030",
+        "p0031",
+        "p0032",
+        "p0033",
+        "p0034",
+        "p0035",
+        "p0036",
+        "p0037",
+        "p0038",
+        "p0039"
+      ],
+      "covered_weight": 140.0,
+      "guarantee": "exact",
+      "is_full_cover": true,
+      "notes": "matrix_fingerprint=d6a4cd1c289f8ebee341151921399e9f96557a0ba39c277924e49a3213f1d4dc",
+      "selected_intervention_ids": [
+        "INT-000"
+      ],
+      "solver_name": "cp_sat",
+      "total_cost": 1.0,
+      "uncovered_path_ids": []
+    },
+    "validated_path_count": 40
+  },
   "counts": {
     "K_source_reported_findings": 12,
     "M_selected_changes": 1,

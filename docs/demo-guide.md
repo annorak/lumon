@@ -4,16 +4,40 @@
 
 Run all commands below from the repository root.
 
-The demo command reads the public fixtures, computes the answer live, and replaces
-`demo/output/result.json` with the result. It never reads that file as a cached answer.
+The demo command runs the source-backed Episode 4 case and the constructed REALISTIC
+case. It computes both answers live before replacing `demo/output/result.json`.
+If either case fails, it leaves the previous result intact. It never reads that file
+as a cached answer.
 
 Private transcripts are not needed. The installed demo makes no runtime network
 calls and needs no API keys, Docker, database, service account, or media tools.
 
-The example uses the public
+The Episode 4 case uses the public
 [graph](../fixtures/armadin/graphs/episode4-fortune600.json),
 [source notes](../fixtures/armadin/provenance/episode4-fortune600.json), and
 [approved excerpts](../fixtures/armadin/sources/episode4-excerpts.txt).
+
+## Constructed case
+
+The second case uses the unchanged REALISTIC generator preset with seed 4.
+Five entries converge on one shared service, then branch through two layers to
+two objectives. That gives 40 paths marked validated in the constructed graph.
+These evidence labels and objective weights are synthetic, not reports of exercised attacks.
+
+Lumon compares seven modeled changes and selects `INT-000`, adding access control
+at `n_choke_l1`. Its removal set blocks all five entry transitions into that
+service and severs all 40 constructed validated paths. The assumed implementation
+cost is 1. The solver returns `EXACT`, proving minimum cost over those paths
+and candidates.
+
+The graph also has three observed and two inferred edges. None matches the
+supported substitution rules, so its computed bypass queue is empty.
+The result does not establish that no bypasses exist.
+
+The JSON keeps Episode 4's fields at the top level and puts the constructed
+summary under `constructed_case`, including the preset parameters needed to
+regenerate the graph. Source findings and customer history belong only to Episode 4.
+The diagrams and recordings still show that source-backed case.
 
 ## Why this exists
 
@@ -48,7 +72,7 @@ unvalidated hypothesis to test. Costs and operational side effects still matter.
     </tr>
     <tr>
       <td>2. Find paths</td>
-      <td>Transitions that were actually tested</td>
+      <td>Transitions marked validated, with source or constructed provenance kept separate</td>
       <td>Validated paths within the configured limits</td>
     </tr>
     <tr>
@@ -96,8 +120,9 @@ Every edge has an evidence level:
 | `observed` | Someone saw it but did not test it | No |
 | `inferred` | A rule or analyst expects it to work | No |
 
-Only paths made of validated edges enter optimization. For the demo fixtures, extracted routes
-are also checked against reviewed source-supported sequences. Observed and inferred edges can
+Only paths made of validated edges enter optimization. Episode 4's extracted routes
+are checked against reviewed source-supported sequences. The constructed case's routes
+are checked against the generator's known path sequences. Observed and inferred edges can
 supply unvalidated hypotheses; they do not contribute to optimized path coverage or the
 validated-path headline.
 
@@ -278,7 +303,9 @@ test ! -e .private/demo-release/terminal-compact.txt &&
 vhs docs/demo.tape
 ```
 
-The tape runs the real demo and exports paired text and cursor PNGs.
+The tape runs the current demo, which now prints both cases, and exports paired
+text and cursor PNGs. It does not reproduce the older Episode 4-only recording;
+review the layout and reading pauses before publishing a new capture.
 The `.private/` paths here are generated outputs, not required private inputs.
 Never mix frames from different recordings.
 
@@ -336,8 +363,9 @@ After reviewing and replacing the recordings, run
 `shasum -a 256 docs/demo.mp4 docs/demo.gif` and update `REVIEWED_RECORDINGS`
 in `docs/render_demo.py`. Do not update hashes just to make a failed check pass.
 
-Rerecord when the graph, result, or console output changes. Matching the reviewed
-hashes confirms file identity, not whether the recorded text is current.
+Rerecord when the recorded case's graph, result, or console output changes.
+Adding the separately labeled constructed case does not change the Episode 4 result.
+Matching the reviewed hashes confirms file identity, not whether the recorded text is current.
 Run the checker again after replacing reviewed assets, and verify playback
 from the public README. The 90 seconds include reading pauses and a final still,
 not a runtime benchmark.

@@ -7,7 +7,7 @@ from hashlib import file_digest
 from pathlib import Path
 
 import imageio_ffmpeg  # type: ignore[import-untyped]
-from demo.run_demo import DemoResult, compute_result, serialize_result
+from demo.run_demo import DemoResult, compute_constructed_result, compute_result, serialize_result
 from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageSequence
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -270,7 +270,7 @@ def main() -> None:
     args = parser.parse_args()
     result = compute_result(ROOT)
     saved = ROOT / "demo/output/result.json"
-    if serialize_result(result) != saved.read_text(encoding="utf-8"):
+    if serialize_result(result, compute_constructed_result()) != saved.read_text(encoding="utf-8"):
         raise ValueError("The live result differs from the reviewed artifact. Review it first.")
     directory = ROOT / "docs"
     if args.check:

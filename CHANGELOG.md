@@ -1479,3 +1479,44 @@ audience note. Private planning files and Git history are unchanged.
 
 - Public CI for this cleanup revision remains pending publication.
 - Broader numeric and budgeted verification and additional bypass rules remain deferred.
+
+## Constructed multi-path demo
+
+**What changed in plain English**
+
+The demo command now runs two separate cases. Episode 4 keeps its one
+source-validated path and SSRF patch result. The second uses the unchanged
+REALISTIC generator preset with seed 4. Its 40 paths are marked validated
+inside a constructed graph, not reported as attacks exercised in an environment.
+
+Lumon compares seven modeled changes and selects one shared access-control
+change at assumed cost 1. It severs all 40 constructed validated paths, and
+CP-SAT proves the minimum cost. The three observed and two inferred edges
+do not match the existing bypass rules, so the generated queue remains empty.
+
+Both cases must finish before the command replaces the saved JSON. Their
+evidence stays separate, and elapsed solve times stay out of the repeatable
+result. Tests check the constructed routes, compare the solve with the
+independent brute-force answer key, and verify that second-case failures
+preserve the previous output.
+
+**New things you can now do**
+
+- Run both cases with `uv run --frozen python demo/run_demo.py`.
+- Inspect the constructed summary and generator settings under
+  `constructed_case` in the saved JSON.
+
+**Files added or changed**
+
+- `demo/run_demo.py`: computes both cases and shares solve checks and display logic.
+- `demo/output/result.json`: adds the constructed summary without changing Episode 4's fields.
+- `tests/unit/test_demo.py`: checks both results, provenance, repeatability, and failures.
+- `README.md`: adds the constructed result and identifies the Episode 4-only media.
+- `docs/demo-guide.md`: explains both cases and the existing recording's scope.
+- `docs/render_demo.py`: checks the combined result before rendering the unchanged graph images.
+- `CHANGELOG.md`: records this addition.
+
+**Not done yet**
+
+- Publication and public CI for this revision require separate approval.
+- New media for the constructed case and additional bypass rules are not included.

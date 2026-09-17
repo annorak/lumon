@@ -1,9 +1,11 @@
-"""Regression checks for the live, public-input Fortune 600 demonstration."""
+"""Regression checks for the source-backed and constructed demonstrations."""
 
 import json
 import shutil
 import subprocess
 import sys
+from collections import Counter
+from itertools import product
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,9 +13,18 @@ import pytest
 from demo import run_demo as demo
 
 from lumon.coverage import CoverageMatrix, StaleMatrixError
+from lumon.generate import REALISTIC, generate
 from lumon.interventions import synthesize
-from lumon.model import Intervention, InterventionCatalog
-from lumon.solve import InfeasibleError, OptimalityGuarantee, Solution, SolverError
+from lumon.model import Evidence, Intervention, InterventionCatalog
+from lumon.paths import extract_paths
+from lumon.solve import (
+    InfeasibleError,
+    OptimalityGuarantee,
+    Solution,
+    SolverError,
+    solve_min_cost_cover,
+)
+from tests.brute_force import brute_force_min_cost_cover
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_HEADLINE = (
@@ -23,6 +34,20 @@ EXPECTED_HEADLINE = (
     "reports 12 remote-code-execution findings."
 )
 EXPECTED_FINGERPRINT = "8779e43738511e00ba17a9bf13c0c8875951babd0b3af126d05682efc8b7f855"
+
+EXPECTED_CONSTRUCTED_HEADLINE = (
+    "Constructed REALISTIC graph: 40 paths marked validated, 1 change, cost 1 assumed "
+    "implementation unit. Lumon proves this is the minimum cost to sever all 40 paths "
+    "using the 7 modeled candidates."
+)
+EXPECTED_CONSTRUCTED_FINGERPRINT = (
+    "d6a4cd1c289f8ebee341151921399e9f96557a0ba39c277924e49a3213f1d4dc"
+)
+
+
+@pytest.fixture
+def constructed() -> demo.ConstructedResult:
+    return demo.compute_constructed_result()
 
 
 @pytest.fixture
@@ -92,13 +117,20 @@ def test_live_result_matches_the_reviewed_full_cover(result: demo.DemoResult) ->
     assert result.ranked_interventions[0].covered_weight == 10
 
 
-def test_readme_and_saved_result_match_the_live_result(result: demo.DemoResult) -> None:
+def test_readme_and_saved_result_match_the_live_result(
+    result: demo.DemoResult, constructed: demo.ConstructedResult
+) -> None:
     saved = (ROOT / "demo/output/result.json").read_text(encoding="utf-8")
-    assert saved == demo.serialize_result(result)
+    assert saved == demo.serialize_result(result, constructed)
     assert json.loads(saved)["headline"] == EXPECTED_HEADLINE
+    assert json.loads(saved)["constructed_case"]["headline"] == EXPECTED_CONSTRUCTED_HEADLINE
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert readme.split("\n\n", 2)[:2] == ["# Lumon", EXPECTED_HEADLINE]
+    assert readme.split("\n\n", 3)[:3] == [
+        "# Lumon",
+        EXPECTED_HEADLINE,
+        EXPECTED_CONSTRUCTED_HEADLINE,
+    ]
     assert f"[Repository]({result.repository_url})" in readme
     assert "\nuv run --frozen python demo/run_demo.py\n" in readme
 
@@ -175,6 +207,18 @@ def test_repeated_commands_write_identical_results_from_public_inputs(demo_root:
     assert payload["solution"]["selected_intervention_ids"] == ["INT-003"]
     assert payload["solution"]["guarantee"] == "exact"
     assert payload["matrix_fingerprint"] == EXPECTED_FINGERPRINT
+    constructed = payload["constructed_case"]
+    assert constructed["evidence_basis"] == "constructed"
+    assert constructed["headline"] == EXPECTED_CONSTRUCTED_HEADLINE
+    assert EXPECTED_CONSTRUCTED_HEADLINE in first.stdout
+    assert constructed["validated_path_count"] == 40
+    assert constructed["solution"]["selected_intervention_ids"] == ["INT-000"]
+    assert constructed["solution"]["guarantee"] == "exact"
+    assert constructed["ranked_interventions"][0]["intervention"]["removes_edge_ids"] == [
+        f"e_{index:04d}" for index in range(5)
+    ]
+    assert "provenance" not in constructed
+    assert "customer" not in constructed
     assert b"wall_time_seconds" not in first_bytes
     assert str(ROOT).encode() not in first_bytes
     assert str(demo_root).encode() not in first_bytes
@@ -310,6 +354,8 @@ def test_main_writes_the_shared_result(demo_root: Path, capsys: pytest.CaptureFi
     assert payload["solution"]["selected_intervention_ids"] == ["INT-003"]
     assert payload["matrix_fingerprint"] == EXPECTED_FINGERPRINT
     assert "wall_time_seconds" not in payload["solution"]
+    assert payload["constructed_case"]["headline"] in captured.out
+    assert "wall_time_seconds" not in payload["constructed_case"]["solution"]
 
 
 @pytest.mark.parametrize("blank", ["", " \t\n"])
@@ -374,6 +420,7 @@ def test_readme_links_release_media_in_the_required_order(result: demo.DemoResul
 
     markers = (
         result.headline,
+        EXPECTED_CONSTRUCTED_HEADLINE,
         *assets[:2],
         "uv run --frozen python demo/run_demo.py",
         *assets[2:],
@@ -389,3 +436,141 @@ def test_readme_links_release_media_in_the_required_order(result: demo.DemoResul
     assert "https://en.wikipedia.org/wiki/Severance_(TV_series)" in readme
     guide = (ROOT / "docs/demo-guide.md").read_text(encoding="utf-8")
     assert f"```text\n{result.headline}\n\n{result.repository_url}\n```" in guide
+
+
+def test_constructed_result_matches_reviewed_routes_and_oracle(
+    constructed: demo.ConstructedResult,
+) -> None:
+    graph, truth = generate(REALISTIC)
+    paths = extract_paths(graph)
+    expected_routes = sorted(
+        list(route)
+        for route in product(
+            [f"n_entry_{index:02d}" for index in range(5)],
+            ["n_choke_l1"],
+            ["n_l2_00", "n_l2_01"],
+            ["n_l3_00", "n_l3_01"],
+            ["n_obj_00", "n_obj_01"],
+        )
+    )
+    assert sorted(path.node_ids for path in paths.paths) == expected_routes
+    assert truth.path_node_sequences == expected_routes
+    assert not paths.truncated
+    assert Counter(edge.evidence for edge in graph.edges) == {
+        Evidence.VALIDATED: 15,
+        Evidence.OBSERVED: 3,
+        Evidence.INFERRED: 2,
+    }
+    catalog = synthesize(graph)
+    matrix = CoverageMatrix(paths, catalog, graph)
+    oracle = brute_force_min_cost_cover(matrix)
+
+    assert constructed.evidence_basis == "constructed"
+    assert constructed.preset == "REALISTIC"
+    assert constructed.generator_params == REALISTIC
+    assert constructed.generator_params.seed == 4
+    assert constructed.graph_id == graph.metadata["graph_id"] == "synthetic-45a38548"
+    assert constructed.validated_path_count == len(paths.paths) == 40
+    assert constructed.candidate_count == len(catalog.interventions) == 7
+    assert constructed.extraction_limits == {"max_paths": 5000, "max_depth": 12}
+    assert constructed.headline == EXPECTED_CONSTRUCTED_HEADLINE
+    solution = constructed.solution
+    assert solution.guarantee is oracle.guarantee is OptimalityGuarantee.EXACT
+    assert solution.total_cost == oracle.total_cost == 1
+    assert solution.selected_intervention_ids == oracle.selected_intervention_ids == ["INT-000"]
+    assert matrix.fingerprint == EXPECTED_CONSTRUCTED_FINGERPRINT
+    assert solution.notes == f"matrix_fingerprint={EXPECTED_CONSTRUCTED_FINGERPRINT}"
+    assert solution.covered_path_ids == [f"p{index:04d}" for index in range(40)]
+    assert solution.uncovered_path_ids == []
+    assert solution.covered_weight == 140
+    assert solution.is_full_cover
+    (row,) = constructed.ranked_interventions
+    assert row.rank == 1
+    assert row.intervention.name == "Add access control at n_choke_l1"
+    assert row.intervention.removes_edge_ids == {f"e_{index:04d}" for index in range(5)}
+    assert row.intervention.cost.source.value == "assumed_default"
+    assert row.cost_units == 1
+    assert row.covered_path_ids == solution.covered_path_ids
+    assert row.covered_weight == 140
+    assert constructed.bypass_queue.hypotheses == []
+    assert not constructed.bypass_queue.truncated
+    assert constructed.bypass_queue.max_hypotheses == 20
+    assert constructed.bypass_queue.selected_intervention_ids == ["INT-000"]
+    assert constructed.bypass_queue.matrix_fingerprint == EXPECTED_CONSTRUCTED_FINGERPRINT
+
+
+def test_constructed_console_labels_synthetic_evidence(constructed: demo.ConstructedResult) -> None:
+    assert demo.render_text(constructed) == (
+        EXPECTED_CONSTRUCTED_HEADLINE
+        + "\nRepository: https://github.com/annorak/lumon"
+        + "\nInput: REALISTIC, seed 4. All evidence labels and objective weights are synthetic, "
+        + "not exercised attacks.\n\n"
+        + """+------------------------------------+-------+
+| Metric                             | Lumon |
++------------------------------------+-------+
+| Selected changes                   |     1 |
+| Cost, assumed implementation units |     1 |
+| Supplied validated paths severed   |    40 |
+| Severed path weight, assumed       |   140 |
+| Uncovered supplied validated paths |     0 |
+| Optimality                         | EXACT |
++------------------------------------+-------+
+
+Selected changes, display order: cost ascending, individual weight descending, then ID.
+1. INT-000: Add access control at n_choke_l1
+   Cost: 1 assumed implementation units; supplied validated paths severed: 40"""
+    )
+
+
+@pytest.mark.parametrize(
+    ("limit", "value", "explanation"),
+    [
+        ("MAX_PATHS", 39, "incomplete constructed path extraction"),
+        ("MAX_DEPTH", 3, "constructed paths do not match generator ground truth"),
+    ],
+)
+def test_constructed_extraction_failure_preserves_previous_result(
+    result: demo.DemoResult,
+    demo_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    limit: str,
+    value: int,
+    explanation: str,
+) -> None:
+    # The source case completed; the limit must fail in the real constructed pipeline.
+    monkeypatch.setattr(demo, "compute_result", lambda root: result)
+    monkeypatch.setattr(demo, limit, value)
+    _assert_failed_main(demo_root, capsys, f"constructed REALISTIC case: {explanation}")
+
+
+@pytest.mark.parametrize(
+    ("selected_ids", "guarantee", "explanation"),
+    [
+        (["INT-000"], OptimalityGuarantee.UNKNOWN, "the demo requires a proven EXACT optimum"),
+        (
+            ["INT-001"],
+            OptimalityGuarantee.EXACT,
+            "the selected changes do not sever every supplied validated path",
+        ),
+    ],
+)
+def test_constructed_unproven_or_incomplete_solutions_preserve_previous_result(
+    demo_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    selected_ids: list[str],
+    guarantee: OptimalityGuarantee,
+    explanation: str,
+) -> None:
+    def supply_controlled_solution(matrix: CoverageMatrix) -> Solution:
+        if matrix.fingerprint != EXPECTED_CONSTRUCTED_FINGERPRINT:
+            return solve_min_cost_cover(matrix)
+        solution = Solution.from_matrix(
+            matrix, selected_ids, solver_name="cp_sat", guarantee=guarantee, wall_time_seconds=0
+        )
+        # The independent matrix check must reject INT-001 despite this false flag.
+        return solution.model_copy(update={"is_full_cover": True})
+
+    monkeypatch.setattr(demo, "solve_min_cost_cover", supply_controlled_solution)
+    _assert_failed_main(demo_root, capsys, f"constructed REALISTIC case: {explanation}")

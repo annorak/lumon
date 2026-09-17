@@ -1,4 +1,4 @@
-"""Run the reviewed Fortune 600 example without network access or private inputs."""
+"""Run the source-backed and constructed examples without network access or private inputs."""
 
 import json
 import sys
@@ -9,10 +9,11 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field, HttpUrl
 
 from lumon.coverage import CoverageMatrix, StaleMatrixError
+from lumon.generate import REALISTIC, GeneratorParams, generate
 from lumon.hypotheses.generate import generate_hypotheses
 from lumon.interventions import synthesize
 from lumon.io import GraphInvariantError, GraphLoadError, assert_usable, load_graph
-from lumon.model import AttackGraph, EdgeType, Intervention, PathSet
+from lumon.model import AttackGraph, EdgeType, Intervention, InterventionCatalog, PathSet
 from lumon.model.hypothesis import HypothesisQueue
 from lumon.paths import extract_paths
 from lumon.solve import (
@@ -117,6 +118,34 @@ class DemoResult(BaseModel):
         )
 
 
+class ConstructedResult(BaseModel):
+    """A generated example, never source evidence or an exercised attack."""
+
+    evidence_basis: Literal["constructed"]
+    preset: Literal["REALISTIC"]
+    generator_params: GeneratorParams
+    graph_id: str
+    validated_path_count: int
+    candidate_count: int
+    extraction_limits: dict[str, int]
+    solution: Solution
+    ranked_interventions: list[_RankedIntervention]
+    bypass_queue: HypothesisQueue
+
+    @property
+    def headline(self) -> str:
+        changes = len(self.solution.selected_intervention_ids)
+        change_word = "change" if changes == 1 else "changes"
+        unit_word = "unit" if self.solution.total_cost == 1 else "units"
+        return (
+            f"Constructed {self.preset} graph: {self.validated_path_count} paths marked validated, "
+            f"{changes} {change_word}, cost {self.solution.total_cost:g} assumed implementation "
+            f"{unit_word}. Lumon proves this is the minimum cost to sever all "
+            f"{self.validated_path_count} paths using the {self.candidate_count} "
+            "modeled candidates."
+        )
+
+
 def compute_result(root: FilePath) -> DemoResult:
     graph_file = root / "fixtures/armadin/graphs" / f"{FIXTURE_NAME}.json"
     provenance_file = FilePath("fixtures/armadin/provenance") / f"{FIXTURE_NAME}.json"
@@ -145,32 +174,9 @@ def compute_result(root: FilePath) -> DemoResult:
     catalog = synthesize(graph)
     matrix = CoverageMatrix(paths, catalog, graph)
     matrix.verify_fingerprint(paths, catalog)
-    solution = solve_min_cost_cover(matrix)
-    if solution.guarantee is not OptimalityGuarantee.EXACT:
-        raise ValueError(f"the demo requires a proven EXACT optimum: {solution.notes}")
-    if not solution.is_full_cover or not matrix.is_full_cover(solution.selected_intervention_ids):
-        raise ValueError("the selected changes do not sever every supplied validated path")
-
-    interventions = catalog.by_id()
-    selected = [interventions[item_id] for item_id in solution.selected_intervention_ids]
-    selected.sort(
-        key=lambda item: (
-            item.cost.tier.numeric_value,
-            -matrix.weight_covered_by([item.id]),
-            item.id,
-        )
-    )
-    ranked = [
-        _RankedIntervention(
-            rank=index,
-            intervention=item,
-            cost_units=item.cost.tier.numeric_value,
-            covered_path_ids=matrix.paths_covered_by(item.id),
-            covered_weight=matrix.weight_covered_by([item.id]),
-        )
-        for index, item in enumerate(selected, start=1)
-    ]
-    removed_ids = {edge_id for item in selected for edge_id in item.removes_edge_ids}
+    solution = _solve_full_cover(matrix)
+    ranked = _rank_interventions(catalog, matrix, solution)
+    removed_ids = {edge_id for row in ranked for edge_id in row.intervention.removes_edge_ids}
     remaining_edges = [edge for edge in graph.edges if edge.id not in removed_ids]
     queue = generate_hypotheses(
         graph,
@@ -223,11 +229,82 @@ def compute_result(root: FilePath) -> DemoResult:
     )
 
 
-def render_text(result: DemoResult) -> str:
+def compute_constructed_result() -> ConstructedResult:
+    graph, truth = generate(REALISTIC)
+    assert_usable(graph)
+    paths = extract_paths(graph, max_paths=MAX_PATHS, max_depth=MAX_DEPTH)
+    if paths.truncated:
+        raise ValueError(f"incomplete constructed path extraction: {paths.truncation_reason}")
+    if sorted(path.node_ids for path in paths.paths) != truth.path_node_sequences:
+        raise ValueError(
+            "constructed paths do not match generator ground truth; check both extraction limits"
+        )
+
+    catalog = synthesize(graph)
+    matrix = CoverageMatrix(paths, catalog, graph)
+    matrix.verify_fingerprint(paths, catalog)
+    solution = _solve_full_cover(matrix)
+    queue = generate_hypotheses(
+        graph,
+        paths,
+        catalog,
+        matrix,
+        solution.selected_intervention_ids,
+        [],  # This preset supplies no alternatives matching the supported substitution rules.
+        max_hypotheses=MAX_HYPOTHESES,
+    )
+    return ConstructedResult(
+        evidence_basis="constructed",
+        preset="REALISTIC",
+        generator_params=REALISTIC,
+        graph_id=graph.metadata["graph_id"],
+        validated_path_count=len(paths.paths),
+        candidate_count=len(catalog.interventions),
+        extraction_limits={"max_paths": MAX_PATHS, "max_depth": MAX_DEPTH},
+        solution=solution,
+        ranked_interventions=_rank_interventions(catalog, matrix, solution),
+        bypass_queue=queue,
+    )
+
+
+def _solve_full_cover(matrix: CoverageMatrix) -> Solution:
+    solution = solve_min_cost_cover(matrix)
+    if solution.guarantee is not OptimalityGuarantee.EXACT:
+        raise ValueError(f"the demo requires a proven EXACT optimum: {solution.notes}")
+    if not solution.is_full_cover or not matrix.is_full_cover(solution.selected_intervention_ids):
+        raise ValueError("the selected changes do not sever every supplied validated path")
+    return solution
+
+
+def _rank_interventions(
+    catalog: InterventionCatalog, matrix: CoverageMatrix, solution: Solution
+) -> list[_RankedIntervention]:
+    interventions = catalog.by_id()
+    selected = [interventions[item_id] for item_id in solution.selected_intervention_ids]
+    selected.sort(
+        key=lambda item: (
+            item.cost.tier.numeric_value,
+            -matrix.weight_covered_by([item.id]),
+            item.id,
+        )
+    )
+    return [
+        _RankedIntervention(
+            rank=index,
+            intervention=item,
+            cost_units=item.cost.tier.numeric_value,
+            covered_path_ids=matrix.paths_covered_by(item.id),
+            covered_weight=matrix.weight_covered_by([item.id]),
+        )
+        for index, item in enumerate(selected, start=1)
+    ]
+
+
+def render_text(result: DemoResult | ConstructedResult) -> str:
     solution = result.solution
     metrics = [
         ("Metric", "Lumon"),
-        ("Selected changes", str(result.counts["M_selected_changes"])),
+        ("Selected changes", str(len(solution.selected_intervention_ids))),
         ("Cost, assumed implementation units", f"{solution.total_cost:g}"),
         ("Supplied validated paths severed", str(len(solution.covered_path_ids))),
         ("Severed path weight, assumed", f"{solution.covered_weight:g}"),
@@ -238,10 +315,17 @@ def render_text(result: DemoResult) -> str:
     value_width = max(len(value) for _, value in metrics)
     border = f"+-{'-' * metric_width}-+-{'-' * value_width}-+"
     table = [f"| {metric:<{metric_width}} | {value:>{value_width}} |" for metric, value in metrics]
+    source = (
+        f"Source: {result.provenance.source.url}"
+        if isinstance(result, DemoResult)
+        else f"Input: {result.preset}, seed {result.generator_params.seed}. "
+        "All evidence labels and objective weights are synthetic, not exercised attacks."
+    )
+    repository_url = result.repository_url if isinstance(result, DemoResult) else REPOSITORY_URL
     lines = [
         result.headline,
-        f"Repository: {result.repository_url}",
-        f"Source: {result.provenance.source.url}",
+        f"Repository: {repository_url}",
+        source,
         "",
         border,
         table[0],
@@ -252,21 +336,31 @@ def render_text(result: DemoResult) -> str:
         "Selected changes, display order: cost ascending, individual weight descending, then ID.",
     ]
     for row in result.ranked_interventions:
+        covered_paths = (
+            ", ".join(row.covered_path_ids)
+            if isinstance(result, DemoResult)
+            else str(len(row.covered_path_ids))
+        )
         lines.extend(
             [
                 f"{row.rank}. {row.intervention.id}: {row.intervention.name}",
                 f"   Cost: {row.cost_units:g} assumed implementation units; "
-                f"supplied validated paths severed: {', '.join(row.covered_path_ids)}",
+                f"supplied validated paths severed: {covered_paths}",
             ]
         )
     return "\n".join(lines)
 
 
-def serialize_result(result: DemoResult) -> str:
-    """Keep run timing out of the shared, repeatable result artifact."""
-    payload = result.model_dump(mode="json", exclude={"solution": {"wall_time_seconds"}})
+def serialize_result(result: DemoResult, constructed: ConstructedResult) -> str:
+    """Keep case provenance separate and run timing out of the repeatable artifact."""
+    payload = result.model_dump(mode="json")
     payload["counts"] = result.counts
     payload["headline"] = result.headline
+    constructed_payload = constructed.model_dump(mode="json")
+    constructed_payload["headline"] = constructed.headline
+    for case in (payload, constructed_payload):
+        del case["solution"]["wall_time_seconds"]
+    payload["constructed_case"] = constructed_payload
     return json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
 
 
@@ -286,10 +380,14 @@ def _write_result(output: FilePath, contents: str) -> None:
 
 def main() -> int:
     root = FilePath(__file__).resolve().parents[1]
+    stage = "Fortune 600 case"
     try:
         result = compute_result(root)
-        contents = serialize_result(result)
-        display = render_text(result)
+        stage = "constructed REALISTIC case"
+        constructed = compute_constructed_result()
+        stage = "result output"
+        contents = serialize_result(result, constructed)
+        display = render_text(result) + "\n\n" + render_text(constructed)
         _write_result(root / "demo/output/result.json", contents)
         print(display)
         print("Result written to demo/output/result.json")
@@ -302,7 +400,7 @@ def main() -> int:
         InfeasibleError,
         SolverError,
     ) as error:
-        print(f"Demo failed: {error}", file=sys.stderr)
+        print(f"Demo failed: {stage}: {error}", file=sys.stderr)
         return 1
     return 0
 

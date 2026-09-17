@@ -2,6 +2,8 @@
 
 For the Fortune 600 chain reported in Armadin, Kill Chains and Coffee, episode 4, Lumon selects 1 modeled change at minimum cost to sever the 1 supplied source-validated path under the stated cost assumptions; the podcast separately reports 12 remote-code-execution findings.
 
+Constructed REALISTIC graph: 40 paths marked validated, 1 change, cost 1 assumed implementation unit. Lumon proves this is the minimum cost to sever all 40 paths using the 7 modeled candidates.
+
 [Repository](https://github.com/annorak/lumon) · [![CI](https://github.com/annorak/lumon/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/annorak/lumon/actions/workflows/ci.yml?query=branch%3Amaster)
 
 ![Constructed Fortune 600 attack graph](docs/fortune600-before.png)
@@ -23,8 +25,9 @@ cd lumon
 uv run --frozen python demo/run_demo.py
 ```
 
-The command computes the result, prints the selected change, and saves
-[demo/output/result.json](demo/output/result.json).
+The command runs both cases, prints their selected changes, and saves
+[demo/output/result.json](demo/output/result.json). The constructed case uses the
+unchanged REALISTIC preset with seed 4. Its paths are generated, not real attacks.
 
 Dependencies may need internet to download. Once installed, the demo runs locally
 without API keys, Docker, or external services.
@@ -35,8 +38,9 @@ without API keys, Docker, or external services.
 
 [Play the 90-second video](docs/demo.mp4).
 
-The silent recording shows the input graph, runs the demo, and displays the
-selected change and saved result. It includes pauses for reading.
+The images and silent recording show the Episode 4 case. The recording shows its
+input graph, selected change, and saved result, with pauses for reading.
+Run the command above for both cases.
 
 ## Why Lumon?
 
