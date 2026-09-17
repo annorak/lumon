@@ -62,7 +62,7 @@ warn_unreachable = true
 # `networkx` ships no py.typed marker, and `lumon.io.nx_adapter` imports it. The
 # override is scoped to that one module deliberately — never a global
 # `ignore_missing_imports`, which would silently loosen type checking for every
-# dependency. `ortools` needs the same treatment when the solver task imports it.
+# dependency.
 [[tool.mypy.overrides]]
 module = ["networkx.*"]
 ignore_missing_imports = true

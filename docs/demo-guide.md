@@ -72,8 +72,8 @@ unvalidated hypothesis to test. Costs and operational side effects still matter.
 The current library can extract validated paths, propose changes, build the coverage table,
 and solve full-cover and budgeted problems with CP-SAT. A separate brute-force solver in
 the tests checks small examples. The demo prints a console summary and writes JSON.
-The shared bypass generator supports entry and vulnerability substitution only, not the
-full Task 13 feature set. General-purpose reporting remains deferred.
+The shared bypass generator supports entry and vulnerability substitution only.
+Other substitution rules and general-purpose reporting remain deferred.
 
 ## The graph
 
@@ -166,7 +166,7 @@ unproven. If no answer was found, Lumon raises a solver error.
 
 There is no size-based solver selection or fallback. Brute force stays under `tests/`.
 The demo-first release verifies minimum-cost full cover under the existing assumed
-cost tiers of 1, 3, and 9. It does not complete the original Task 10 budgeted checks.
+cost tiers of 1, 3, and 9. Broader budgeted verification remains deferred.
 
 ## Full-cover verification
 
@@ -232,31 +232,24 @@ print(f"found {stats.path_count} validated paths")
 ## Updating the media
 
 The media tools are separate from the dependencies used to run the numeric demo.
-All three PNGs come from [render_demo.py](render_demo.py); the recording commands
+Both PNGs come from [render_demo.py](render_demo.py); the recording commands
 live in [demo.tape](demo.tape).
 
-To regenerate only `docs/demo.png` from the current result:
+To regenerate `docs/fortune600-before.png` and `docs/fortune600-after.png`:
 
 ```sh
 uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \
   python -m docs.render_demo
 ```
 
-To regenerate `docs/fortune600-before.png` and `docs/fortune600-after.png`:
-
-```sh
-uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \
-  python -m docs.render_demo --graphs
-```
-
 Both graph images use the reviewed route and computed removal set. The after
 image marks the removed SSRF transition with a gap and red X. The other
-transitions remain gray. This command leaves `docs/demo.png` unchanged.
+transitions remain gray.
 
-The rendering commands refuse to continue if the computed result differs from
-the saved JSON. Review any result change first. Neither replaces the video or GIF.
+The rendering command refuses to continue if the computed result differs from
+the saved JSON. Review any result change first. It never replaces the video or GIF.
 
-To check all three PNGs, the video, and the GIF without replacing them:
+To check both PNGs, the video, and the GIF without replacing them:
 
 ```sh
 uv run --frozen --with pillow==12.3.0 --with imageio-ffmpeg==0.6.0 \

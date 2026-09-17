@@ -1,6 +1,6 @@
 .PHONY: install lint format typecheck test check verify clean
 
-# Every later task runs `make check` and trusts its output. Keep these targets
+# Every change must pass `make check`. Keep these targets
 # honest: no target may pass by skipping work or by lowering a threshold.
 
 install:

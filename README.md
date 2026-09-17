@@ -4,8 +4,6 @@ For the Fortune 600 chain reported in Armadin, Kill Chains and Coffee, episode 4
 
 [Repository](https://github.com/annorak/lumon) · [![CI](https://github.com/annorak/lumon/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/annorak/lumon/actions/workflows/ci.yml?query=branch%3Amaster)
 
-![Fortune 600 attack path, Lumon's recommendation, and modeled severance](docs/demo.png)
-
 ![Constructed Fortune 600 attack graph](docs/fortune600-before.png)
 
 ![Fortune 600 graph after Lumon's recommended SSRF patch](docs/fortune600-after.png)

@@ -11,11 +11,6 @@ from demo.run_demo import DemoResult, compute_result, serialize_result
 from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageSequence
 
 ROOT = Path(__file__).resolve().parents[1]
-SIZE = (1600, 1200)
-INK = "#182830"
-PAPER = "#F6F4EE"
-TEAL = "#007D71"
-RUST = "#B24F35"
 VIDEO_SIZE = (1800, 1080)
 VIDEO_SECONDS = 90
 VIDEO_FPS = 24
@@ -41,7 +36,7 @@ def draw_text(
     *,
     size: int = 24,
     columns: int = 100,
-    color: str = INK,
+    color: str,
 ) -> None:
     wrapped = "\n".join(
         "\n".join(textwrap.wrap(line, columns, break_long_words=False, break_on_hyphens=False))
@@ -53,132 +48,6 @@ def draw_text(
     if bounds[2] > image.width - 24 or bounds[3] > image.height - 24:
         raise ValueError(f"Media text exceeds the canvas: {text[:80]}")
     draw.multiline_text(position, wrapped, font=font, fill=color, spacing=8)
-
-
-def draw_path(
-    image: Image.Image,
-    result: DemoResult,
-    x: int,
-    removed_ids: set[str],
-    remaining_color: str,
-) -> None:
-    (path,) = result.paths.paths
-    nodes = {node.id: node for node in result.graph.nodes}
-    edges = {edge.id: edge for edge in result.graph.edges}
-    draw = ImageDraw.Draw(image)
-    for index, node_id in enumerate(path.node_ids):
-        top = 448 + index * 100
-        bottom = top + 56
-        draw.rounded_rectangle((x, top, x + 696, bottom), radius=10, fill="white")
-        draw_text(image, (x + 18, top + 14), nodes[node_id].label, size=24, columns=55)
-        if index == len(path.edge_ids):
-            continue
-
-        edge = edges[path.edge_ids[index]]
-        is_removed = edge.id in removed_ids
-        color = RUST if is_removed else remaining_color
-        edge_x = x + 24
-        next_top = top + 100
-        midpoint = (bottom + next_top) // 2
-        if is_removed:
-            draw.line((edge_x, bottom, edge_x, midpoint - 12), fill=color, width=4)
-            draw.line((edge_x, midpoint + 12, edge_x, next_top), fill=color, width=4)
-            draw.line((edge_x - 7, midpoint - 7, edge_x + 7, midpoint + 7), fill=color, width=4)
-            draw.line((edge_x - 7, midpoint + 7, edge_x + 7, midpoint - 7), fill=color, width=4)
-        else:
-            draw.line((edge_x, bottom, edge_x, next_top - 2), fill=color, width=4)
-            draw.polygon(
-                ((edge_x - 7, next_top - 10), (edge_x + 7, next_top - 10), (edge_x, next_top - 2)),
-                fill=color,
-            )
-        label = TRANSITION_LABELS[edge.type.value]
-        if edge.enabled_by:
-            label += f": {nodes[edge.enabled_by].label} [{edge.enabled_by}]"
-        if is_removed:
-            label += " / REMOVED"
-        draw_text(image, (x + 56, bottom + 10), label, size=20, columns=68, color=color)
-
-
-def render_poster(result: DemoResult) -> Image.Image:
-    # Both panels use the same source-backed route and computed removal set.
-    (path,) = result.paths.paths
-    (selected,) = result.ranked_interventions
-    image = Image.new("RGB", SIZE, PAPER)
-    draw = ImageDraw.Draw(image)
-    draw.rectangle((0, 0, SIZE[0], 12), fill=TEAL)
-    draw_text(image, (48, 36), "Fortune 600: the kill chain and Lumon's fix", size=36)
-    draw_text(image, (48, 92), result.headline, size=22, columns=115)
-
-    draw.rectangle((48, 216, 1552, 324), fill="white", outline="#D1D6D3", width=2)
-    draw.line((48, 254, 1552, 254), fill="#D1D6D3", width=2)
-    for x in (132, 998, 1324):
-        draw.line((x, 216, x, 324), fill="#D1D6D3", width=2)
-    for x, label in (
-        (64, "Rank"),
-        (150, "Selected intervention"),
-        (1020, "Cost / provenance"),
-        (1350, "Paths severed"),
-    ):
-        draw_text(image, (x, 228), label, size=20)
-    draw_text(image, (64, 272), str(selected.rank))
-    draw_text(
-        image,
-        (150, 272),
-        f"{selected.intervention.id}: {selected.intervention.name}",
-        size=24,
-    )
-    draw_text(image, (1020, 264), f"{selected.cost_units:g} assumed implementation unit", size=18)
-    draw_text(
-        image,
-        (1020, 294),
-        selected.intervention.cost.source.value.replace("_", " "),
-        size=18,
-    )
-    draw_text(image, (1350, 272), ", ".join(selected.covered_path_ids), size=22)
-
-    draw_text(
-        image,
-        (48, 338),
-        "Display order: cost ascending, individual severed weight descending, then ID. "
-        "Not implementation priority.",
-        size=18,
-        columns=140,
-    )
-
-    draw_text(image, (48, 364), "Before", size=32)
-    draw_text(image, (48, 408), f"Source-reported route {path.id}", size=22)
-    draw_text(image, (856, 364), f"After {selected.intervention.id}", size=32)
-    draw_text(
-        image,
-        (856, 408),
-        f"{len(result.solution.covered_path_ids)}/{len(result.paths.paths)} "
-        "supplied validated paths severed",
-        size=22,
-    )
-    draw_path(image, result, 48, set(), TEAL)
-    draw_path(image, result, 856, set(result.removed_transition_ids), "#69747A")
-
-    draw_text(
-        image,
-        (48, 1040),
-        "All transitions: source-validated. Gray: retained in the model. Red X: selected removal.",
-        size=20,
-    )
-    draw_text(
-        image,
-        (48, 1076),
-        "Modeled effects on supplied paths only. Other transitions remain. "
-        f"Minimum-cost full cover: {result.solution.guarantee.value.upper()}.",
-        size=20,
-    )
-    draw_text(
-        image,
-        (48, 1112),
-        "Customer changes were not reported; numerical comparison is unavailable.",
-        size=20,
-    )
-    draw_text(image, (48, 1150), result.repository_url, size=18)
-    return image
 
 
 def draw_graph_link(
@@ -331,14 +200,13 @@ def render_graph(result: DemoResult, is_severed: bool) -> Image.Image:
 
 def verify_media(result: DemoResult, directory: Path) -> None:
     for name, expected in (
-        ("demo.png", render_poster(result)),
         ("fortune600-before.png", render_graph(result, False)),
         ("fortune600-after.png", render_graph(result, True)),
     ):
-        with Image.open(directory / name) as poster:
-            if poster.format != "PNG" or poster.size != expected.size:
+        with Image.open(directory / name) as image:
+            if image.format != "PNG" or image.size != expected.size:
                 raise ValueError(f"{name}: expected a full-size PNG release image.")
-            if ImageChops.difference(poster.convert("RGB"), expected).getbbox():
+            if ImageChops.difference(image.convert("RGB"), expected).getbbox():
                 raise ValueError(f"{name} differs from the current computed result.")
 
     for name, expected_hash in REVIEWED_RECORDINGS.items():
@@ -396,12 +264,8 @@ def verify_media(result: DemoResult, directory: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument(
+    parser.add_argument(
         "--check", action="store_true", help="Check existing media without replacing it."
-    )
-    mode.add_argument(
-        "--graphs", action="store_true", help="Render the before-and-after graph PNGs."
     )
     args = parser.parse_args()
     result = compute_result(ROOT)
@@ -409,16 +273,13 @@ def main() -> None:
     if serialize_result(result) != saved.read_text(encoding="utf-8"):
         raise ValueError("The live result differs from the reviewed artifact. Review it first.")
     directory = ROOT / "docs"
-    if args.graphs:
-        for name, is_severed in (("before", False), ("after", True)):
-            render_graph(result, is_severed).save(directory / f"fortune600-{name}.png")
-        print("Graph PNGs rendered. Existing poster and recordings were not changed.")
-    elif args.check:
+    if args.check:
         verify_media(result, directory)
         print("PNGs and recordings checked. Playback review is still required.")
     else:
-        render_poster(result).save(directory / "demo.png")
-        print("PNG rendered. The video and GIF were not changed.")
+        for name, is_severed in (("before", False), ("after", True)):
+            render_graph(result, is_severed).save(directory / f"fortune600-{name}.png")
+        print("Graph PNGs rendered. The video and GIF were not changed.")
 
 
 if __name__ == "__main__":

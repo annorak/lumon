@@ -1,4 +1,4 @@
-"""Focused full-cover checks for the demo release, not the full Task 10 suite."""
+"""Focused minimum-cost full-cover checks for the demo release."""
 
 import math
 from itertools import product

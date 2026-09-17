@@ -363,7 +363,6 @@ def test_mismatched_graph_provenance_is_rejected(
 def test_readme_links_release_media_in_the_required_order(result: demo.DemoResult) -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assets = (
-        "docs/demo.png",
         "docs/fortune600-before.png",
         "docs/fortune600-after.png",
         "docs/demo.gif",
@@ -375,9 +374,9 @@ def test_readme_links_release_media_in_the_required_order(result: demo.DemoResul
 
     markers = (
         result.headline,
-        *assets[:3],
+        *assets[:2],
         "uv run --frozen python demo/run_demo.py",
-        *assets[3:],
+        *assets[2:],
     )
     positions = [readme.index(marker) for marker in markers]
     assert positions == sorted(positions)
