@@ -1573,3 +1573,28 @@ Removed the paragraph about dependency downloads and runtime services.
 **Not done yet**
 
 - Nothing remains for this README update. Demo logic and media are unchanged.
+
+## README project introduction
+
+**What changed in plain English**
+
+Added a short introduction before the demo results explaining what Lumon does.
+It credits Kill Chains and Coffee as the inspiration and explains how reported
+attack chains become test graphs for path extraction and recommendations.
+
+The introduction links to the supplied series playlist. Existing results,
+episode links, and the generated-example wording stay unchanged.
+
+**New things you can now do**
+
+- Read the project background before the results and open the series playlist.
+
+**Files added or changed**
+
+- `README.md`: adds the two-sentence introduction and playlist link.
+- `tests/unit/test_demo.py`: checks the introduction's position and link before both headlines.
+- `CHANGELOG.md`: records this addition.
+
+**Not done yet**
+
+- Nothing remains for this documentation update. Demo logic and media are unchanged.

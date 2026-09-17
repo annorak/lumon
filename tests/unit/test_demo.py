@@ -127,8 +127,11 @@ def test_readme_and_saved_result_match_the_live_result(
     assert json.loads(saved)["constructed_case"]["headline"] == EXPECTED_CONSTRUCTED_HEADLINE
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert readme.split("\n\n", 3)[:3] == [
-        "# Lumon",
+    paragraphs = readme.split("\n\n", 4)
+    assert paragraphs[0] == "# Lumon"
+    assert paragraphs[1].startswith("Lumon ")
+    assert "](https://www.youtube.com/playlist?list=PLCYNZH29al_E)" in paragraphs[1]
+    assert paragraphs[2:4] == [
         EXPECTED_HEADLINE.replace("episode 4", EPISODE_LINK),
         EXPECTED_CONSTRUCTED_HEADLINE,
     ]

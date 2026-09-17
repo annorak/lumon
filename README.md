@@ -1,5 +1,11 @@
 # Lumon
 
+Lumon finds the lowest-cost set of modeled changes that severs the supplied
+validated attack paths, then suggests unvalidated bypass hypotheses to test next.
+The [Kill Chains and Coffee series](https://www.youtube.com/playlist?list=PLCYNZH29al_E)
+inspired this project, and we turn its reported attack chains into test graphs
+to check Lumon's path extraction and recommendations.
+
 For the Fortune 600 chain reported in Armadin, Kill Chains and Coffee, [episode 4](https://www.youtube.com/watch?v=RxLj-4BsYhg&t=2s), Lumon selects 1 modeled change at minimum cost to sever the 1 supplied source-validated path under the stated cost assumptions; the podcast separately reports 12 remote-code-execution findings.
 
 Constructed REALISTIC graph: 40 paths marked validated, 1 change, cost 1 assumed implementation unit. Lumon proves this is the minimum cost to sever all 40 paths using the 7 modeled candidates.
